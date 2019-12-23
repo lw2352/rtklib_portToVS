@@ -1614,7 +1614,7 @@ static void accept_sock(int ssock, con_t **con)
 int main(int argc, char **argv)
 {
     con_t *con[MAXCON]={0};
-    int i,start=1,port=0,outstat=0,trace=3,sock=0;
+    int i,start=1,port=0,outstat=0,trace=2,sock=0;
     char *dev="",file[MAXSTR]="";
     
     for (i=1;i<argc;i++) {

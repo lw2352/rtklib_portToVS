@@ -1105,7 +1105,7 @@ static int outecef(unsigned char *buff, const char *s, const sol_t *sol,
     const char *sep=opt2sep(opt);
     char *p=(char *)buff;
     
-    trace(3,"outecef:\n");
+    trace(1,"outecef:\n");
     
     p+=sprintf(p,"%s%s%14.4f%s%14.4f%s%14.4f%s%3d%s%3d%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%6.2f%s%6.1f",
                s,sep,sol->rr[0],sep,sol->rr[1],sep,sol->rr[2],sep,sol->stat,sep,

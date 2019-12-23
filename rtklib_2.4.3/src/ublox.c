@@ -1082,7 +1082,7 @@ static int sync_ubx(unsigned char *buff, unsigned char data)
 *-----------------------------------------------------------------------------*/
 extern int input_ubx(raw_t *raw, unsigned char data)
 {
-    //trace(5,"input_ubx: data=%02x\n",data);
+    trace(5,"input_ubx: data=%02x\n",data);
     
     /* synchronize frame */
     if (raw->nbyte==0) {

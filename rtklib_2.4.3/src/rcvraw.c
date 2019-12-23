@@ -986,7 +986,7 @@ extern void free_raw(raw_t *raw)
 *-----------------------------------------------------------------------------*/
 extern int input_raw(raw_t *raw, int format, unsigned char data)
 {
-    //trace(5,"input_raw: format=%d data=0x%02x\n",format,data);
+    trace(5,"input_raw: format=%d data=0x%02x\n",format,data);
     
     switch (format) {
         case STRFMT_OEM4 : return input_oem4 (raw,data);
