@@ -2880,7 +2880,7 @@ extern void traceopen(const char *file)
     char path[1024];
     
     reppath(file,path,time,"","");
-    if (!*path||!(fp_trace=fopen(path,"w"))) fp_trace=stderr;
+    //if (!*path||!(fp_trace=fopen(path,"w"))) fp_trace=stderr;
 	fp_trace = stdout;
     strcpy(file_trace,file);
     tick_trace=tickget();

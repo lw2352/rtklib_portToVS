@@ -69,7 +69,7 @@ static void writesol(rtksvr_t *svr, int index)
     unsigned char buff[MAXSOLMSG+1];
     int i,n;
     
-    tracet(4,"writesol: index=%d\n",index);
+    tracet(2,"writesol: index=%d\n",index);
     
     for (i=0;i<2;i++) {
         
