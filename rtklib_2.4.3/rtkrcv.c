@@ -52,6 +52,8 @@
 #include "src\rtklib.h"
 #include "vt.h"
 
+
+
 #define PRGNAME     "rtkrcv"            /* program name */
 #define CMDPROMPT   "rtkrcv> "          /* command prompt */
 #define MAXCON      32                  /* max number of consoles */
@@ -100,7 +102,7 @@ static char strpath[8][MAXSTR]={"","","","","","","",""}; /* stream paths */
 static int strfmt[]={                   /* stream formats */
     STRFMT_UBX,STRFMT_RTCM3,STRFMT_SP3,SOLF_LLH,SOLF_NMEA
 };
-static int svrcycle     =10;            /* server cycle (ms) */
+static int svrcycle = 10;            /* server cycle (ms) */
 static int timeout      =10000;         /* timeout time (ms) */
 static int reconnect    =10000;         /* reconnect interval (ms) */
 static int nmeacycle    =5000;          /* nmea request cycle (ms) */
@@ -421,7 +423,8 @@ static int startsvr(vt_t *vt)
     }
     /* confirm overwrite */
     for (i=3;i<8;i++) {
-        if (strtype[i]==STR_FILE&&!confwrite(vt,strpath[i])) return 0;
+        if (strtype[i]==STR_FILE&&!confwrite(vt,strpath[i])) 
+            return 0;
     }
     if (prcopt.refpos==4) { /* rtcm */
         for (i=0;i<3;i++) prcopt.rb[i]=0.0;
@@ -1611,10 +1614,29 @@ static void accept_sock(int ssock, con_t **con)
 *     command is distinguished according to header characters.
 *     
 *-----------------------------------------------------------------------------*/
+
+//test lambda
+void test()
+{
+    double a[3] = { 5.45, 3.1, 2.97 };
+    double aConv[9] = { 6.290, 5.978, 0.544, 5.978, 6.292, 2.340, 0.544, 2.340, 6.288};
+    int n = sizeof(a)/sizeof(double);
+    int m = 2;
+    double s[2];
+    
+    double* b;
+    b = mat(n, 2);
+    int c = lambda(n, m, a, aConv, b, s);
+    tracemat(2,b,n,2,0,0);
+    float ret=ls_sqrt(2);
+    test_lambda(n, m, a, aConv, b, s);
+}
+
 int main(int argc, char **argv)
 {
+    
     con_t *con[MAXCON]={0};
-    int i,start=1,port=0,outstat=0,trace=3,sock=0;
+    int i,start=1,port=0,outstat=0,trace=2,sock=0;
     char *dev="",file[MAXSTR]="";
     
     for (i=1;i<argc;i++) {
@@ -1633,6 +1655,8 @@ int main(int argc, char **argv)
         traceopen(TRACEFILE);
         tracelevel(trace);
     }
+    //my test
+    test();
     /* initialize rtk server and monitor port */
     rtksvrinit(&svr);
     strinit(&moni);
@@ -1641,7 +1665,9 @@ int main(int argc, char **argv)
     if (!*file) sprintf(file,"%s/%s",OPTSDIR,OPTSFILE);
     
     resetsysopts();
-    if (!loadopts(file,rcvopts)||!loadopts(file,sysopts)) {
+    int a = loadopts(file, rcvopts);
+    int b = loadopts(file, sysopts);
+    if (!a || !b) {
         fprintf(stderr,"no options file: %s. defaults used\n",file);
     }
     getsysopts(&prcopt,solopt,&filopt);
@@ -1711,3 +1737,5 @@ int main(int argc, char **argv)
     traceclose();
     return 0;
 }
+
+

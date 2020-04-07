@@ -69,7 +69,7 @@ static void writesol(rtksvr_t *svr, int index)
     unsigned char buff[MAXSOLMSG+1];
     int i,n;
     
-    tracet(2,"writesol: index=%d\n",index);
+    tracet(3,"writesol: index=%d\n",index);
     
     for (i=0;i<2;i++) {
         
@@ -83,6 +83,11 @@ static void writesol(rtksvr_t *svr, int index)
         else {
             /* output solution */
             n=outsols(buff,&svr->rtk.sol,svr->rtk.rb,svr->solopt+i);
+            //test add by lw
+            buff[n++] = 'A';
+            buff[n++] = 'B';
+            buff[n++] = 'C';
+            buff[n++] = 'D';
         }
         strwrite(svr->stream+i+3,buff,n);
         
@@ -645,6 +650,7 @@ static void *rtksvrthread(void *arg)
         
         /* sleep until next cycle */
         sleepms(svr->cycle-cputime);
+
     }
     for (i=0;i<MAXSTRRTK;i++) strclose(svr->stream+i);
     for (i=0;i<3;i++) {

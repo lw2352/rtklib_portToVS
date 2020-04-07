@@ -159,10 +159,10 @@
     <ClCompile Include="src\ublox.c">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="rtkrcv.c">
+    <ClCompile Include="vt.c">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="vt.c">
+    <ClCompile Include="rtkrcv.c">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

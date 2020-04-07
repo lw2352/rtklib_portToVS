@@ -1,20 +1,53 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29911.84
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rtklib_2.4.3", "rtklib_2.4.3\rtklib_2.4.3.vcxproj", "{0D2B6759-17BB-4398-B9DC-5FF2B6791C0C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B3B57D1A-59B7-4281-B545-66F9356F1662} = {B3B57D1A-59B7-4281-B545-66F9356F1662}
+		{838C70C7-98A5-46A1-A93C-D7E9966A3E15} = {838C70C7-98A5-46A1-A93C-D7E9966A3E15}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test", "test\test.vcxproj", "{B3B57D1A-59B7-4281-B545-66F9356F1662}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MLAMBDA", "..\..\..\MLAMBDA-Eigen-master\MLAMBDA\MLAMBDA\MLAMBDA.vcxproj", "{838C70C7-98A5-46A1-A93C-D7E9966A3E15}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
 		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{0D2B6759-17BB-4398-B9DC-5FF2B6791C0C}.Debug|Win32.ActiveCfg = Debug|Win32
 		{0D2B6759-17BB-4398-B9DC-5FF2B6791C0C}.Debug|Win32.Build.0 = Debug|Win32
+		{0D2B6759-17BB-4398-B9DC-5FF2B6791C0C}.Debug|x64.ActiveCfg = Debug|Win32
 		{0D2B6759-17BB-4398-B9DC-5FF2B6791C0C}.Release|Win32.ActiveCfg = Release|Win32
 		{0D2B6759-17BB-4398-B9DC-5FF2B6791C0C}.Release|Win32.Build.0 = Release|Win32
+		{0D2B6759-17BB-4398-B9DC-5FF2B6791C0C}.Release|x64.ActiveCfg = Release|Win32
+		{B3B57D1A-59B7-4281-B545-66F9356F1662}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B3B57D1A-59B7-4281-B545-66F9356F1662}.Debug|Win32.Build.0 = Debug|Win32
+		{B3B57D1A-59B7-4281-B545-66F9356F1662}.Debug|x64.ActiveCfg = Debug|x64
+		{B3B57D1A-59B7-4281-B545-66F9356F1662}.Debug|x64.Build.0 = Debug|x64
+		{B3B57D1A-59B7-4281-B545-66F9356F1662}.Release|Win32.ActiveCfg = Release|Win32
+		{B3B57D1A-59B7-4281-B545-66F9356F1662}.Release|Win32.Build.0 = Release|Win32
+		{B3B57D1A-59B7-4281-B545-66F9356F1662}.Release|x64.ActiveCfg = Release|x64
+		{B3B57D1A-59B7-4281-B545-66F9356F1662}.Release|x64.Build.0 = Release|x64
+		{838C70C7-98A5-46A1-A93C-D7E9966A3E15}.Debug|Win32.ActiveCfg = Debug|Win32
+		{838C70C7-98A5-46A1-A93C-D7E9966A3E15}.Debug|Win32.Build.0 = Debug|Win32
+		{838C70C7-98A5-46A1-A93C-D7E9966A3E15}.Debug|x64.ActiveCfg = Debug|x64
+		{838C70C7-98A5-46A1-A93C-D7E9966A3E15}.Debug|x64.Build.0 = Debug|x64
+		{838C70C7-98A5-46A1-A93C-D7E9966A3E15}.Release|Win32.ActiveCfg = Release|Win32
+		{838C70C7-98A5-46A1-A93C-D7E9966A3E15}.Release|Win32.Build.0 = Release|Win32
+		{838C70C7-98A5-46A1-A93C-D7E9966A3E15}.Release|x64.ActiveCfg = Release|x64
+		{838C70C7-98A5-46A1-A93C-D7E9966A3E15}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F1C737B5-8860-46E7-9550-603941861E19}
 	EndGlobalSection
 EndGlobal

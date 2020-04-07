@@ -334,6 +334,29 @@ extern int loadopts(const char *file, opt_t *opts)
         *p++='\0';
         chop(buff);
         if (!(opt=searchopt(buff,opts))) continue;
+        //add by lw
+        //char a[32] = {0};
+        int* a; double* b; char* c; int* d;
+        if (opt->format == 0)
+        {
+            
+            a = opt->var;
+        }
+        if (opt->format == 1)
+        {
+            
+            b = opt->var;
+        }
+        if (opt->format == 2)
+        {
+            
+            c = opt->var;           
+        }
+        if (opt->format == 3)
+        {
+            
+            d = opt->var;
+        }
         
         if (!str2opt(opt,p)) {
             fprintf(stderr,"invalid option value %s (%s:%d)\n",buff,file,n);
@@ -519,9 +542,12 @@ extern void getsysopts(prcopt_t *popt, solopt_t *sopt, filopt_t *fopt)
     trace(3,"getsysopts:\n");
     
     buff2sysopts();
-    if (popt) *popt=prcopt_;
-    if (sopt) *sopt=solopt_;
-    if (fopt) *fopt=filopt_;
+    if (popt) 
+        *popt=prcopt_;
+    if (sopt) 
+        *sopt=solopt_;
+    if (fopt) 
+        *fopt=filopt_;
 }
 /* set system options ----------------------------------------------------------
 * set system options

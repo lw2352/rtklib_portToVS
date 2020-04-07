@@ -1114,6 +1114,11 @@ static int filter_(const double *x, const double *P, const double *H,
                    const double *v, const double *R, int n, int m,
                    double *xp, double *Pp)
 {
+    //test
+    tracemat(2, x, n, 1, 0, 0);
+    tracemat(2, P, n, n, 0, 0);
+    tracemat(2, H, n, m, 0, 0);
+
     double *F=mat(n,m),*Q=mat(m,m),*K=mat(n,m),*I=eye(n);
     int info;
     
@@ -1136,17 +1141,42 @@ extern int filter(double *x, double *P, const double *H, const double *v,
     double *x_,*xp_,*P_,*Pp_,*H_;
     int i,j,k,info,*ix;
     
-    ix=imat(n,1); for (i=k=0;i<n;i++) if (x[i]!=0.0&&P[i+i*n]>0.0) ix[k++]=i;
-    x_=mat(k,1); xp_=mat(k,1); P_=mat(k,k); Pp_=mat(k,k); H_=mat(k,m);
-    for (i=0;i<k;i++) {
-        x_[i]=x[ix[i]];
-        for (j=0;j<k;j++) P_[i+j*k]=P[ix[i]+ix[j]*n];
-        for (j=0;j<m;j++) H_[i+j*k]=H[ix[i]+j*n];
+    ix=imat(n,1);
+    for (i = k = 0; i < n; i++)
+    {
+        if (x[i] != 0.0 && P[i + i * n] > 0.0) 
+            ix[k++] = i;
     }
-    info=filter_(x_,P_,H_,v,R,k,m,xp_,Pp_);
-    for (i=0;i<k;i++) {
+    x_=mat(k,1); 
+    xp_=mat(k,1); 
+    P_=mat(k,k); 
+    Pp_=mat(k,k); 
+    H_=mat(k,m);
+    /* compress array by removing zero elements to save computation time */
+    for (i=0;i<k;i++) 
+    {
+        x_[i]=x[ix[i]];
+        for (j = 0; j < k; j++)
+        {
+            P_[i + j * k] = P[ix[i] + ix[j] * n];
+        }
+        for (j = 0; j < m; j++)
+        {
+            H_[i + j * k] = H[ix[i] + j * n];
+        }
+    }
+    /* do kalman filter state update on compressed arrays */
+    //info=filter_(x_,P_,H_,v,R,k,m,xp_,Pp_);
+    
+    info=test_filter_(x_, P_, H_, v, R, k, m, xp_, Pp_);
+    /* copy values from compressed arrays back to full arrays */
+    for (i=0;i<k;i++) 
+    {
         x[ix[i]]=xp_[i];
-        for (j=0;j<k;j++) P[ix[i]+ix[j]*n]=Pp_[i+j*k];
+        for (j = 0; j < k; j++)
+        {
+            P[ix[i] + ix[j] * n] = Pp_[i + j * k];
+        }
     }
     free(ix); free(x_); free(xp_); free(P_); free(Pp_); free(H_);
     return info;
@@ -1200,7 +1230,9 @@ extern void matfprint(const double A[], int n, int m, int p, int q, FILE *fp)
     int i,j;
     
     for (i=0;i<n;i++) {
-        for (j=0;j<m;j++) fprintf(fp," %*.*f",p,q,A[i+j*n]);
+        for (j=0;j<m;j++) 
+            //fprintf(fp," %*.*f",p,q,A[i+j*n]);
+            fprintf(fp, " %5.3e", A[i + j * n]);
         fprintf(fp,"\n");
     }
 }

@@ -1,0 +1,186 @@
+3    11.444: writesol: index=0
+3 outsols :
+2 outecef:2019/03/22 15:39:06.490  -2005037.1455   5411161.0007   2707856.9190   2   9   0.0273   0.0549   0.0245  -0.0265   0.0315  -0.0166   0.00    0.0
+
+3 outsolexs:
+3 outsols :
+2 outecef:2045 455964  -2005037.1455   5411161.0007   2707856.9190   2   9   0.0273   0.0549   0.0245  -0.0265   0.0315  -0.0166   0.00    0.0
+
+3 outsolexs:
+3 outsols :
+3 outpos  :
+3 rtkpos  : time=2019/03/22 06:39:24.990 n=56
+3 pntpos  : tobs=2019/03/22 06:39:24.990 n=28
+3 satposs : teph=2019/03/22 06:39:24.990 n=28 ephopt=0
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat= 3 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.914 sat= 3
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat= 4 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.923 sat= 4
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat= 7 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.920 sat= 7
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat= 8 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.932 sat= 8
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat= 9 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.927 sat= 9
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=11 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.919 sat=11
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=16 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.927 sat=16
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=18 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.919 sat=18
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=23 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.930 sat=23
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=26 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.921 sat=26
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=27 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.932 sat=27
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=31 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.917 sat=31
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=97 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.876 sat=97
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=98 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.875 sat=98
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=99 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.878 sat=99
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=100 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.870 sat=100
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=101 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.869 sat=101
+3 estpos  : n=28
+3 resprng : n=28
+3 unhealthy satellite: sat=114 svh=01
+3 resprng : n=28
+3 unhealthy satellite: sat=114 svh=01
+3 resprng : n=28
+3 unhealthy satellite: sat=114 svh=01
+3 valsol  : n=28 nv=12
+3 estvel  : n=28
+3 resdop  : n=28
+3 resdop  : n=28
+3 relpos  : nx=180 nu=28 nr=28
+3 satposs : teph=2019/03/22 06:39:24.990 n=56 ephopt=0
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat= 3 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.914 sat= 3
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat= 4 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.923 sat= 4
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat= 7 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.920 sat= 7
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat= 8 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.932 sat= 8
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat= 9 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.927 sat= 9
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=11 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.919 sat=11
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=16 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.927 sat=16
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=18 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.919 sat=18
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=23 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.930 sat=23
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=26 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.921 sat=26
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=27 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.932 sat=27
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=31 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.917 sat=31
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=97 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.876 sat=97
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=98 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.875 sat=98
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=99 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.878 sat=99
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=100 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.870 sat=100
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=101 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.869 sat=101
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat= 3 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.414 sat= 3
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat= 4 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.423 sat= 4
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat= 7 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.420 sat= 7
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat= 8 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.432 sat= 8
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat= 9 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.427 sat= 9
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=11 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.419 sat=11
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=16 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.427 sat=16
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=18 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.419 sat=18
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=23 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.430 sat=23
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=26 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.421 sat=26
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=27 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.432 sat=27
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=31 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.417 sat=31
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=97 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.376 sat=97
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=98 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.375 sat=98
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=99 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.378 sat=99
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=100 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.370 sat=100
+3 no broadcast ephemeris: 2019/03/22 06:39:25 sat=101 iode= -1
+3 no broadcast clock 2019/03/22 06:39:24.369 sat=101
+3 zdres   : n=28
+3 unhealthy satellite: sat=114 svh=01
+3 selsat  : nu=28 nr=28
+3 udstate : ns=10
+3 udpos   : tt=0.500
+3 udbias  : tt=0.500 ns=10
+3 detslp_ll: i=17 rcv=1
+3 detslp_ll: i=45 rcv=2
+3 detslp_gf_L1L2: i=17 j=45
+3 detslp_gf_L1L5: i=17 j=45
+3 detslp_ll: i=18 rcv=1
+3 detslp_ll: i=46 rcv=2
+3 detslp_gf_L1L2: i=18 j=46
+3 detslp_gf_L1L5: i=18 j=46
+3 detslp_ll: i=19 rcv=1
+3 detslp_ll: i=47 rcv=2
+3 detslp_gf_L1L2: i=19 j=47
+3 detslp_gf_L1L5: i=19 j=47
+3 detslp_ll: i=20 rcv=1
+3 detslp_ll: i=48 rcv=2
+3 detslp_gf_L1L2: i=20 j=48
+3 detslp_gf_L1L5: i=20 j=48
+3 detslp_ll: i=21 rcv=1
+3 detslp_ll: i=49 rcv=2
+3 detslp_gf_L1L2: i=21 j=49
+3 detslp_gf_L1L5: i=21 j=49
+3 detslp_ll: i=22 rcv=1
+3 detslp_ll: i=50 rcv=2
+3 detslp_gf_L1L2: i=22 j=50
+3 detslp_gf_L1L5: i=22 j=50
+3 detslp_ll: i=23 rcv=1
+3 detslp_ll: i=51 rcv=2
+3 detslp_gf_L1L2: i=23 j=51
+3 detslp_gf_L1L5: i=23 j=51
+3 detslp_ll: i=24 rcv=1
+3 detslp_ll: i=52 rcv=2
+3 detslp_gf_L1L2: i=24 j=52
+3 detslp_gf_L1L5: i=24 j=52
+3 detslp_ll: i=25 rcv=1
+3 detslp_ll: i=53 rcv=2
+3 detslp_gf_L1L2: i=25 j=53
+3 detslp_gf_L1L5: i=25 j=53
+3 detslp_ll: i=26 rcv=1
+3 detslp_ll: i=54 rcv=2
+3 detslp_gf_L1L2: i=26 j=54
+3 detslp_gf_L1L5: i=26 j=54
+3 zdres   : n=28
+3 unhealthy satellite: sat=114 svh=01
+3 ddres   : dt=0.5 nx=180 ns=10
+3 ddcov   : n=2
+3 zdres   : n=28
+3 unhealthy satellite: sat=114 svh=01
+3 ddres   : dt=0.5 nx=180 ns=10
+3 ddcov   : n=2
+3 valpos  : nv=16 thres=4.0
+3 resamb_LAMBDA : nx=180
+3 ddmat   :
