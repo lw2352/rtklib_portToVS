@@ -48,8 +48,8 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>test.lib;MLAMBDA.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\Users\LW\Documents\rtklib\vs0\rtklib_2.4.3\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -123,6 +123,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="rtk.conf" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="data\1.txt" />
+    <Text Include="data\2.txt" />
+    <Text Include="data\3.txt" />
+    <Text Include="data\4.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
