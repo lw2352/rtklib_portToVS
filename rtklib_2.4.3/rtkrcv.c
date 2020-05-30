@@ -1629,15 +1629,15 @@ void test()
     int c = lambda(n, m, a, aConv, b, s);
     //test
     //tracemat(2,b,n,2,0,0);
-    float ret=ls_sqrt(2);
-    test_lambda(n, m, a, aConv, b, s);
+    //float ret=ls_sqrt(2);
+    //test_lambda(n, m, a, aConv, b, s);
 }
 
 int main(int argc, char **argv)
 {
     
     con_t *con[MAXCON]={0};
-    int i,start=1,port=0,outstat=0,trace=1,sock=0;
+    int i,start=1,port=0,outstat=0,trace=2,sock=0;
     char *dev="",file[MAXSTR]="";
     
     for (i=1;i<argc;i++) {
