@@ -1115,9 +1115,9 @@ static int filter_(const double *x, const double *P, const double *H,
                    double *xp, double *Pp)
 {
     //test
-    tracemat(2, x, n, 1, 0, 0);
-    tracemat(2, P, n, n, 0, 0);
-    tracemat(2, H, n, m, 0, 0);
+    //tracemat(2, x, n, 1, 0, 0);
+    //tracemat(2, P, n, n, 0, 0);
+    //tracemat(2, H, n, m, 0, 0);
 
     double *F=mat(n,m),*Q=mat(m,m),*K=mat(n,m),*I=eye(n);
     int info;
@@ -1166,9 +1166,9 @@ extern int filter(double *x, double *P, const double *H, const double *v,
         }
     }
     /* do kalman filter state update on compressed arrays */
-    //info=filter_(x_,P_,H_,v,R,k,m,xp_,Pp_);
+    info=filter_(x_,P_,H_,v,R,k,m,xp_,Pp_);
     
-    info=test_filter_(x_, P_, H_, v, R, k, m, xp_, Pp_);
+    //info=test_filter_(x_, P_, H_, v, R, k, m, xp_, Pp_);
     /* copy values from compressed arrays back to full arrays */
     for (i=0;i<k;i++) 
     {

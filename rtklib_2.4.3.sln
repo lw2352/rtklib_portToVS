@@ -4,14 +4,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 16.0.29911.84
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rtklib_2.4.3", "rtklib_2.4.3\rtklib_2.4.3.vcxproj", "{0D2B6759-17BB-4398-B9DC-5FF2B6791C0C}"
-	ProjectSection(ProjectDependencies) = postProject
-		{B3B57D1A-59B7-4281-B545-66F9356F1662} = {B3B57D1A-59B7-4281-B545-66F9356F1662}
-		{838C70C7-98A5-46A1-A93C-D7E9966A3E15} = {838C70C7-98A5-46A1-A93C-D7E9966A3E15}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test", "test\test.vcxproj", "{B3B57D1A-59B7-4281-B545-66F9356F1662}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MLAMBDA", "..\..\..\MLAMBDA-Eigen-master\MLAMBDA\MLAMBDA\MLAMBDA.vcxproj", "{838C70C7-98A5-46A1-A93C-D7E9966A3E15}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,22 +19,6 @@ Global
 		{0D2B6759-17BB-4398-B9DC-5FF2B6791C0C}.Release|Win32.ActiveCfg = Release|Win32
 		{0D2B6759-17BB-4398-B9DC-5FF2B6791C0C}.Release|Win32.Build.0 = Release|Win32
 		{0D2B6759-17BB-4398-B9DC-5FF2B6791C0C}.Release|x64.ActiveCfg = Release|Win32
-		{B3B57D1A-59B7-4281-B545-66F9356F1662}.Debug|Win32.ActiveCfg = Debug|Win32
-		{B3B57D1A-59B7-4281-B545-66F9356F1662}.Debug|Win32.Build.0 = Debug|Win32
-		{B3B57D1A-59B7-4281-B545-66F9356F1662}.Debug|x64.ActiveCfg = Debug|x64
-		{B3B57D1A-59B7-4281-B545-66F9356F1662}.Debug|x64.Build.0 = Debug|x64
-		{B3B57D1A-59B7-4281-B545-66F9356F1662}.Release|Win32.ActiveCfg = Release|Win32
-		{B3B57D1A-59B7-4281-B545-66F9356F1662}.Release|Win32.Build.0 = Release|Win32
-		{B3B57D1A-59B7-4281-B545-66F9356F1662}.Release|x64.ActiveCfg = Release|x64
-		{B3B57D1A-59B7-4281-B545-66F9356F1662}.Release|x64.Build.0 = Release|x64
-		{838C70C7-98A5-46A1-A93C-D7E9966A3E15}.Debug|Win32.ActiveCfg = Debug|Win32
-		{838C70C7-98A5-46A1-A93C-D7E9966A3E15}.Debug|Win32.Build.0 = Debug|Win32
-		{838C70C7-98A5-46A1-A93C-D7E9966A3E15}.Debug|x64.ActiveCfg = Debug|x64
-		{838C70C7-98A5-46A1-A93C-D7E9966A3E15}.Debug|x64.Build.0 = Debug|x64
-		{838C70C7-98A5-46A1-A93C-D7E9966A3E15}.Release|Win32.ActiveCfg = Release|Win32
-		{838C70C7-98A5-46A1-A93C-D7E9966A3E15}.Release|Win32.Build.0 = Release|Win32
-		{838C70C7-98A5-46A1-A93C-D7E9966A3E15}.Release|x64.ActiveCfg = Release|x64
-		{838C70C7-98A5-46A1-A93C-D7E9966A3E15}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

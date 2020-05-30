@@ -84,10 +84,10 @@ static void writesol(rtksvr_t *svr, int index)
             /* output solution */
             n=outsols(buff,&svr->rtk.sol,svr->rtk.rb,svr->solopt+i);
             //test add by lw
-            buff[n++] = 'A';
+            /*buff[n++] = 'A';
             buff[n++] = 'B';
             buff[n++] = 'C';
-            buff[n++] = 'D';
+            buff[n++] = 'D';*/
         }
         strwrite(svr->stream+i+3,buff,n);
         

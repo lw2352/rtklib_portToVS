@@ -1473,9 +1473,9 @@ static int resamb_LAMBDA(rtk_t *rtk, double *bias, double *xa)
     trace(4,"N(0)="); tracemat(4,y+na,1,nb,10,3);
     
     /* lambda/mlambda integer least-square estimation */
-    //if (!(info=lambda(nb,2,y+na,Qb,b,s))) {
+    if (!(info=lambda(nb,2,y+na,Qb,b,s))) {
     //ÓÃeigenº¯Êý¿âÌæ´ú
-    if (!(info = test_lambda(nb, 2, y + na, Qb, b, s))){
+    //if (!(info = test_lambda(nb, 2, y + na, Qb, b, s))){
     
         trace(4,"N(1)="); tracemat(4,b   ,1,nb,0,0);
         trace(4,"N(2)="); tracemat(4,b+nb,1,nb,0,0);

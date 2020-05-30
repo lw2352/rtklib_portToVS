@@ -175,7 +175,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
     <None Include="rtk.conf">
       <Filter>源文件</Filter>
     </None>
