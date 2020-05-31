@@ -64,7 +64,7 @@
 #define OPTSFILE    "../rtklib_2.4.3/rtk.conf"       /* default config file */
 #define NAVIFILE    "rtkrcv.nav"        /* navigation save file */
 #define STATFILE    "rtkrcv_%Y%m%d%h%M.stat"  /* solution status file */
-#define TRACEFILE   "rtkrcv_%Y%m%d%h%M.trace" /* debug trace file */
+#define TRACEFILE   "" /* debug trace file rtkrcv_%Y%m%d%h%M.trace*/
 #define INTKEEPALIVE 1000               /* keep alive interval (ms) */
 
 #define ESC_CLEAR   "\033[H\033[2J"     /* ansi/vt100 escape: erase screen */
@@ -1658,6 +1658,7 @@ int main(int argc, char **argv)
     }
     //my test
     //test();
+    //return 0;
     /* initialize rtk server and monitor port */
     rtksvrinit(&svr);
     strinit(&moni);

@@ -1,7 +1,7 @@
 /*------------------------------------------------------------------------------
 * solution.c : solution functions
 *
-*          Copyright (C) 2007-2015 by T.TAKASU, All rights reserved.
+*          Copyright (C) 2007-2018 by T.TAKASU, All rights reserved.
 *
 * reference :
 *     [1] National Marine Electronic Association and International Marine
@@ -43,6 +43,7 @@
 *                            ignore NMEA talker ID
 *           2016/07/30  1.15 suppress output if std is over opt->maxsolstd
 *           2017/06/13  1.16 support output/input of velocity solution
+*           2018/10/10  1.17 support reading solution status file
 *-----------------------------------------------------------------------------*/
 #include <ctype.h>
 #include "rtklib.h"
@@ -1068,7 +1069,7 @@ extern int readsolstatt(char *files[], int nfile, gtime_t ts, gtime_t te,
                         double tint, solstatbuf_t *statbuf)
 {
     FILE *fp;
-    char path[1024];
+    char path[1024],*p;
     int i;
     
     trace(3,"readsolstatt: nfile=%d\n",nfile);
@@ -1077,7 +1078,12 @@ extern int readsolstatt(char *files[], int nfile, gtime_t ts, gtime_t te,
     statbuf->data=NULL;
     
     for (i=0;i<nfile;i++) {
-        sprintf(path,"%s.stat",files[i]);
+        if ((p=strrchr(files[i],'.'))&&!strcmp(p,".stat")) {
+            sprintf(path,"%s",files[i]);
+        }
+        else {
+            sprintf(path,"%s.stat",files[i]);
+        }
         if (!(fp=fopen(path,"r"))) {
             trace(2,"readsolstatt: file open error %s\n",path);
             continue;
@@ -1099,25 +1105,70 @@ extern int readsolstat(char *files[], int nfile, solstatbuf_t *statbuf)
     return readsolstatt(files,nfile,time,time,0.0,statbuf);
 }
 /* output solution as the form of x/y/z-ecef ---------------------------------*/
-static int outecef(unsigned char *buff, const char *s, const sol_t *sol,
+/*static int outecef(unsigned char *buff, const char *s, const sol_t *sol,
                    const solopt_t *opt)
 {
     const char *sep=opt2sep(opt);
     char *p=(char *)buff;
     
-    //trace(2,"outecef:\n");
+    trace(3,"outecef:\n");
     
     p+=sprintf(p,"%s%s%14.4f%s%14.4f%s%14.4f%s%3d%s%3d%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%6.2f%s%6.1f",
                s,sep,sol->rr[0],sep,sol->rr[1],sep,sol->rr[2],sep,sol->stat,sep,
                sol->ns,sep,SQRT(sol->qr[0]),sep,SQRT(sol->qr[1]),sep,SQRT(sol->qr[2]),
                sep,sqvar(sol->qr[3]),sep,sqvar(sol->qr[4]),sep,sqvar(sol->qr[5]),
                sep,sol->age,sep,sol->ratio);
-	//add by lw
+    
+    if (opt->outvel) { *//* output velocity */
+        /*p+=sprintf(p,"%s%10.5f%s%10.5f%s%10.5f%s%9.5f%s%8.5f%s%8.5f%s%8.5f%s%8.5f%s%8.5f",
+                   sep,sol->rr[3],sep,sol->rr[4],sep,sol->rr[5],sep,
+                   SQRT(sol->qv[0]),sep,SQRT(sol->qv[1]),sep,SQRT(sol->qv[2]),
+                   sep,sqvar(sol->qv[3]),sep,sqvar(sol->qv[4]),sep,
+                   sqvar(sol->qv[5]));
+    }
+    p+=sprintf(p,"\r\n");
+    return p-(char *)buff;
+}*/
+
+static int outecef(unsigned char *buff, const char *s, const sol_t *sol,
+                   const solopt_t *opt)
+{
+    const char *sep=opt2sep(opt);
+    char *p=(char *)buff;
+     
+    /*trace(3,"outecef:\n");*/
+    /*add by lw*/
+    static double opos[3];
+    int i=0;
+    static int n=0;
+
+    double pos[3],r[3],enu[3];
+    if(n==0)
+    {
+        for (i=0;i<3;i++)
+        {
+            opos[i]=sol->rr[i];
+        }
+        n=1;
+    }
+	  for (i=0;i<3;i++)
+	  {
+	      r[i]=sol->rr[i]-opos[i];
+	  }
+    ecef2pos(opos,pos);
+    ecef2enu(pos,r,enu);
+    
+    p+=sprintf(p,"%s%s%14.4f%s%14.4f%s%14.4f%s%3d%s%3d%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%6.2f%s%6.1f",
+               s,sep,sol->rr[0],sep,sol->rr[1],sep,sol->rr[2],sep,sol->stat,sep,
+               sol->ns,sep,SQRT(sol->qr[0]),sep,SQRT(sol->qr[1]),sep,SQRT(sol->qr[2]),
+               sep, enu[0],sep, enu[1] ,sep, enu[2],
+               sep,sol->age,sep,sol->ratio);//倒数三四五的数是当前坐标与上一个坐标的差
+    //add by lw
 	trace(1, "outecef:%s%s%14.4f%s%14.4f%s%14.4f%s%3d%s%3d%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%6.2f%s%6.1f\n\n",
-		s, sep, sol->rr[0], sep, sol->rr[1], sep, sol->rr[2], sep, sol->stat, sep,
-		sol->ns, sep, SQRT(sol->qr[0]), sep, SQRT(sol->qr[1]), sep, SQRT(sol->qr[2]),
-		sep, sqvar(sol->qr[3]), sep, sqvar(sol->qr[4]), sep, sqvar(sol->qr[5]),
-		sep, sol->age, sep, sol->ratio);
+        s, sep, sol->rr[0], sep, sol->rr[1], sep, sol->rr[2], sep, sol->stat, sep,
+        sol->ns, sep, SQRT(sol->qr[0]), sep, SQRT(sol->qr[1]), sep, SQRT(sol->qr[2]),
+        sep, enu[0], sep, enu[1], sep, enu[2],
+        sep, sol->age, sep, sol->ratio);
     
     if (opt->outvel) { /* output velocity */
         p+=sprintf(p,"%s%10.5f%s%10.5f%s%10.5f%s%9.5f%s%8.5f%s%8.5f%s%8.5f%s%8.5f%s%8.5f",
@@ -1127,6 +1178,12 @@ static int outecef(unsigned char *buff, const char *s, const sol_t *sol,
                    sqvar(sol->qv[5]));
     }
     p+=sprintf(p,"\n");
+    /*update add by lw*/
+    for (i=0;i<3;i++)
+    {
+        opos[i]=sol->rr[i];
+    }
+    
     return p-(char *)buff;
 }
 /* output solution as the form of lat/lon/height -----------------------------*/
