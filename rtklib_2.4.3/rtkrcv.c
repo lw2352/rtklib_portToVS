@@ -1633,7 +1633,7 @@ void test()
     //test_lambda(n, m, a, aConv, b, s);
 }
 
-int main(int argc, char **argv)
+int rtkrcv(int argc, char **argv)
 {
     
     con_t *con[MAXCON]={0};

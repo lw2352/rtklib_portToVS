@@ -1,7 +1,7 @@
 #include "src\rtklib.h"
 
 
-void main1()
+void main()
 {
 
 	gtime_t ts={0},te={0};

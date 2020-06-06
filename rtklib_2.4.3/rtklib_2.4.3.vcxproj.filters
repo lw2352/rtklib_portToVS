@@ -178,18 +178,4 @@
       <Filter>源文件</Filter>
     </None>
   </ItemGroup>
-  <ItemGroup>
-    <Text Include="data\1.txt">
-      <Filter>data</Filter>
-    </Text>
-    <Text Include="data\2.txt">
-      <Filter>data</Filter>
-    </Text>
-    <Text Include="data\3.txt">
-      <Filter>data</Filter>
-    </Text>
-    <Text Include="data\4.txt">
-      <Filter>data</Filter>
-    </Text>
-  </ItemGroup>
 </Project>
