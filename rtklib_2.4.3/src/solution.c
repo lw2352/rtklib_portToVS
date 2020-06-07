@@ -1164,7 +1164,7 @@ static int outecef(unsigned char *buff, const char *s, const sol_t *sol,
                sep, enu[0],sep, enu[1] ,sep, enu[2],
                sep,sol->age,sep,sol->ratio);//倒数三四五的数是当前坐标与上一个坐标的差
     //add by lw
-	trace(1, "outecef:%s%s%14.4f%s%14.4f%s%14.4f%s%3d%s%3d%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%6.2f%s%6.1f\n\n",
+	trace(6, "outecef:%s%s%14.4f%s%14.4f%s%14.4f%s%3d%s%3d%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%6.2f%s%6.1f\n\n",
         s, sep, sol->rr[0], sep, sol->rr[1], sep, sol->rr[2], sep, sol->stat, sep,
         sol->ns, sep, SQRT(sol->qr[0]), sep, SQRT(sol->qr[1]), sep, SQRT(sol->qr[2]),
         sep, enu[0], sep, enu[1], sep, enu[2],

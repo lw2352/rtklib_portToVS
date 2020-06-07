@@ -9,6 +9,9 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
+    <Filter Include="data">
+      <UniqueIdentifier>{aa9358c0-950c-460a-8793-f0bce33a6ee4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\convgpx.c">
@@ -173,6 +176,18 @@
   <ItemGroup>
     <None Include="rtk.conf">
       <Filter>源文件</Filter>
+    </None>
+    <None Include="data\3.nav">
+      <Filter>data</Filter>
+    </None>
+    <None Include="data\3.obs">
+      <Filter>data</Filter>
+    </None>
+    <None Include="data\4.nav">
+      <Filter>data</Filter>
+    </None>
+    <None Include="data\4.obs">
+      <Filter>data</Filter>
     </None>
   </ItemGroup>
 </Project>

@@ -1127,8 +1127,8 @@ static int filter_(const double *x, const double *P, const double *H,
     //tracemat(2, H, n, m, 0, 0);
 
     double *F=mat(n,m),*Q=mat(m,m),*K=mat(n,m),*I=eye(n);
-    int info;
-    
+    int info=0;
+#if 0   
     matcpy(Q,R,m,m);
     matcpy(xp,x,n,1);
     matmul("NN",n,m,n,1.0,P,H,0.0,F);       /* Q=H'*P*H+R */
@@ -1140,6 +1140,7 @@ static int filter_(const double *x, const double *P, const double *H,
         matmul("NN",n,n,n,1.0,I,P,0.0,Pp);
     }
     free(F); free(Q); free(K); free(I);
+#endif
     return info;
 }
 extern int filter(double *x, double *P, const double *H, const double *v,

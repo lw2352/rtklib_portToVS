@@ -1633,13 +1633,13 @@ void test()
     //test_lambda(n, m, a, aConv, b, s);
 }
 
-int rtkrcv(int argc, char **argv)
+int rtkrcv()
 {
     
     con_t *con[MAXCON]={0};
     int i,start=1,port=0,outstat=0,trace=2,sock=0;
     char *dev="",file[MAXSTR]="";
-    
+#if 0
     for (i=1;i<argc;i++) {
         if      (!strcmp(argv[i],"-s")) start=1;
         else if (!strcmp(argv[i],"-p")&&i+1<argc) port=atoi(argv[++i]);
@@ -1652,6 +1652,7 @@ int rtkrcv(int argc, char **argv)
         else if (!strcmp(argv[i],"-sta")&&i+1<argc) strcpy(sta_name,argv[++i]);
         else printusage();
     }
+#endif
     if (trace>0) {
         traceopen(TRACEFILE);
         tracelevel(trace);

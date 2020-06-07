@@ -122,6 +122,10 @@
     <ClInclude Include="vt.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="data\3.nav" />
+    <None Include="data\3.obs" />
+    <None Include="data\4.nav" />
+    <None Include="data\4.obs" />
     <None Include="rtk.conf" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
