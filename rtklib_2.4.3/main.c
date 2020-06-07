@@ -1,20 +1,23 @@
 #include "src\rtklib.h"
 
+#define TRACEFILE   ""
 
 void main()
 {
+	traceopen(TRACEFILE);
+	tracelevel(3);
 
 	gtime_t ts={0},te={0};
 	prcopt_t prcopt=prcopt_default;
 	solopt_t solopt=solopt_default;
 	filopt_t filopt={0};
-	char* infile[]={{"D:\\rtklib\\testdata\\07590920.05o"},
-					{"D:\\rtklib\\testdata\\30400920.05o"},
-					{"D:\\rtklib\\testdata\\07590920.05n"},
+	char* infile[]={{"C:\\Users\\LW\\Documents\\rtklib\\vs0\\rtklib_2.4.3\\rtklib_2.4.3\\data\\1.obs"},
+					{"C:\\Users\\LW\\Documents\\rtklib\\vs0\\rtklib_2.4.3\\rtklib_2.4.3\\data\\2.obs"},
+					{"C:\\Users\\LW\\Documents\\rtklib\\vs0\\rtklib_2.4.3\\rtklib_2.4.3\\data\\1.nav"},
 	};
-	char* outfile="D:\\rtklib\\testdata\\pos.pos";
+	char* outfile="C:\\Users\\LW\\Documents\\rtklib\\vs0\\rtklib_2.4.3\\rtklib_2.4.3\\data\\pos.pos";
 
-	prcopt.mode=PMODE_MOVEB;
+	prcopt.mode= PMODE_STATIC;
 	prcopt.navsys = SYS_GPS;
 	solopt.posf=SOLF_ENU;
 	postpos(ts,te,0,0,&prcopt,&solopt,&filopt,infile,3,outfile,NULL,NULL);

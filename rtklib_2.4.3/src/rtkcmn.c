@@ -2920,7 +2920,7 @@ extern void traceopen(const char *file)
     
     reppath(file,path,time,"","");
     //if (!*path||!(fp_trace=fopen(path,"w"))) fp_trace=stderr;
-	fp_trace = stdout;
+	fp_trace = stderr;
     strcpy(file_trace,file);
     tick_trace=tickget();
     time_trace=time;
