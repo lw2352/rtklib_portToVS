@@ -74,17 +74,6 @@ static int obsindex(obs_t *obs, gtime_t time, int sat)
     obs->n++;
     return i;
 }
-/* ura value (m) to ura index ------------------------------------------------*/
-static int uraindex(double value)
-{
-    static const double ura_eph[]={
-        2.4,3.4,4.85,6.85,9.65,13.65,24.0,48.0,96.0,192.0,384.0,768.0,1536.0,
-        3072.0,6144.0,0.0
-    };
-    int i;
-    for (i=0;i<15;i++) if (ura_eph[i]>=value) break;
-    return i;
-}
 /* decode tersus tracking status -----------------------------------------------
 * deocode tersus tracking status
 * args   : unsigned int stat I  tracking status field
@@ -363,6 +352,11 @@ static int decode_rangecmpb(raw_t *raw)
             raw->obs.data[index].LLI[pos]=(unsigned char)lli;
             raw->obs.data[index].code[pos]=code;
         }
+#if 0 /* for debug */
+        trace(3,"sys=%d prn=%3d cp=%12.5f lli=%2d plock=%2d clock=%2d lockt=%4.2f halfc=%2d parity=%2d ts=%s\n",
+              sys,prn,adr,lli,plock,clock,lockt,halfc,parity,time_str(raw->tobs,3));
+#endif
+
     }
     return 1;
 }
@@ -436,7 +430,7 @@ static int decode_gpsephemb(raw_t *raw)
     eph.toc=gpst2time(eph.week,toc);
     eph.ttr=adjweek(eph.toe,tow);
     eph.sva=uraindex(ura);
-    
+
     if (!strstr(raw->opt,"-EPHALL")) {
         if (timediff(raw->nav.eph[eph.sat-1].toe,eph.toe)==0.0&&
             raw->nav.eph[eph.sat-1].iode==eph.iode&&

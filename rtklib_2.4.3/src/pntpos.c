@@ -23,6 +23,7 @@
 /* constants -----------------------------------------------------------------*/
 
 #define SQR(x)      ((x)*(x))
+#define MAX(x,y)    ((x)>=(y)?(x):(y))
 
 #define NX          (4+3)       /* # of estimated parameters */
 
@@ -35,13 +36,32 @@
 #define REL_HUMI    0.7         /* relative humidity for saastamoinen model */
 
 /* pseudorange measurement error variance ------------------------------------*/
-static double varerr(const prcopt_t *opt, double el, int sys)
+static double varerr(const prcopt_t *opt, double el, double snr_rover, int sys)
 {
-    double fact,varr;
-    fact=sys==SYS_GLO?EFACT_GLO:(sys==SYS_SBS?EFACT_SBS:EFACT_GPS);
-    varr=SQR(opt->err[0])*(SQR(opt->err[1])+SQR(opt->err[2])/sin(el));
-    if (opt->ionoopt==IONOOPT_IFLC) varr*=SQR(3.0); /* iono-free */
-    return SQR(fact)*varr;
+    double a, b, snr_max;
+    double fact = opt->err[0];
+    double sinel = sin(el);
+    
+    switch (sys) {
+        case SYS_GPS: fact *= EFACT_GPS; break;
+        case SYS_GLO: fact *= EFACT_GLO; break;
+        case SYS_SBS: fact *= EFACT_SBS; break;
+        default:      fact *= EFACT_GPS; break;
+    }
+        
+    a = fact * opt->err[1];
+    b = fact * opt->err[2];
+    snr_max = opt->err[5];
+    
+    /* note: SQR(3.0) is approximated scale factor for error variance 
+       in the case of iono-free combination */
+    fact = (opt->ionoopt == IONOOPT_IFLC) ? SQR(3.0) : 1.0;
+    switch (opt->weightmode) {
+        case WEIGHTOPT_ELEVATION: return fact * ( SQR(a) + SQR(b / sinel) );
+        case WEIGHTOPT_SNR      : return fact * SQR(a) * pow(10, 0.1 * MAX(snr_max - snr_rover, 0)); 
+                                                   ;
+        default: return 0;
+    }
 }
 /* get tgd parameter (m) -----------------------------------------------------*/
 static double gettgd(int sat, const nav_t *nav)
@@ -198,10 +218,11 @@ extern int tropcorr(gtime_t time, const nav_t *nav, const double *pos,
 static int rescode(int iter, const obsd_t *obs, int n, const double *rs,
                    const double *dts, const double *vare, const int *svh,
                    const nav_t *nav, const double *x, const prcopt_t *opt,
-                   double *v, double *H, double *var, double *azel, int *vsat,
-                   double *resp, int *ns)
+                   const ssat_t *ssat, double *v, double *H, double *var, 
+                   double *azel, int *vsat, double *resp, int *ns)
 {
     double r,dion,dtrp,vmeas,vion,vtrp,rr[3],pos[3],dtr,e[3],P,lam_L1;
+    double snr_rover = (ssat) ? 0.25 * ssat->snr_rover[0] : opt->err[5];
     int i,j,nv=0,sys,mask[4]={0};
     
     trace(3,"resprng : n=%d\n",n);
@@ -261,7 +282,7 @@ static int rescode(int iter, const obsd_t *obs, int n, const double *rs,
         vsat[i]=1; resp[i]=v[nv]; (*ns)++;
         
         /* error variance */
-        var[nv++]=varerr(opt,azel[1+i*2],sys)+vare[i]+vmeas+vion+vtrp;
+        var[nv++]=varerr(opt,azel[1+i*2],snr_rover,sys)+vare[i]+vmeas+vion+vtrp;
         
         trace(4,"sat=%2d azel=%5.1f %4.1f res=%7.3f sig=%5.3f\n",obs[i].sat,
               azel[i*2]*R2D,azel[1+i*2]*R2D,resp[i],sqrt(var[nv-1]));
@@ -288,8 +309,8 @@ static int valsol(const double *azel, const int *vsat, int n,
     /* chi-square validation of residuals */
     vv=dot(v,v,nv);
     if (nv>nx&&vv>chisqr[nv-nx-1]) {
-        sprintf(msg,"chi-square error nv=%d vv=%.1f cs=%.1f",nv,vv,chisqr[nv-nx-1]);
-        return 0;
+        sprintf(msg,"Warning: large chi-square error nv=%d vv=%.1f cs=%.1f",nv,vv,chisqr[nv-nx-1]);
+        /* return 0; */ /* threshold too strict for all use cases, report error but continue on */
     }
     /* large gdop check */
     for (i=ns=0;i<n;i++) {
@@ -308,8 +329,8 @@ static int valsol(const double *azel, const int *vsat, int n,
 /* estimate receiver position ------------------------------------------------*/
 static int estpos(const obsd_t *obs, int n, const double *rs, const double *dts,
                   const double *vare, const int *svh, const nav_t *nav,
-                  const prcopt_t *opt, sol_t *sol, double *azel, int *vsat,
-                  double *resp, char *msg)
+                  const prcopt_t *opt, const ssat_t *ssat, sol_t *sol, double *azel,
+                  int *vsat, double *resp, char *msg)
 {
     double x[NX]={0},dx[NX],Q[NX*NX],*v,*H,*var,sig;
     int i,j,k,info,stat,nv,ns;
@@ -323,7 +344,7 @@ static int estpos(const obsd_t *obs, int n, const double *rs, const double *dts,
     for (i=0;i<MAXITR;i++) {
         
         /* pseudorange residuals */
-        nv=rescode(i,obs,n,rs,dts,vare,svh,nav,x,opt,v,H,var,azel,vsat,resp,
+        nv=rescode(i,obs,n,rs,dts,vare,svh,nav,x,opt,ssat,v,H,var,azel,vsat,resp,
                    &ns);
         
         if (nv<NX) {
@@ -376,8 +397,8 @@ static int estpos(const obsd_t *obs, int n, const double *rs, const double *dts,
 /* raim fde (failure detection and exclution) -------------------------------*/
 static int raim_fde(const obsd_t *obs, int n, const double *rs,
                     const double *dts, const double *vare, const int *svh,
-                    const nav_t *nav, const prcopt_t *opt, sol_t *sol,
-                    double *azel, int *vsat, double *resp, char *msg)
+                    const nav_t *nav, const prcopt_t *opt, const ssat_t *ssat, 
+                    sol_t *sol, double *azel, int *vsat, double *resp, char *msg)
 {
     obsd_t *obs_e;
     sol_t sol_e={{0}};
@@ -403,7 +424,7 @@ static int raim_fde(const obsd_t *obs, int n, const double *rs,
             svh_e[k++]=svh[j];
         }
         /* estimate receiver position without a satellite */
-        if (!estpos(obs_e,n-1,rs_e,dts_e,vare_e,svh_e,nav,opt,&sol_e,azel_e,
+        if (!estpos(obs_e,n-1,rs_e,dts_e,vare_e,svh_e,nav,opt,ssat,&sol_e,azel_e,
                     vsat_e,resp_e,msg_e)) {
             trace(3,"raim_fde: exsat=%2d (%s)\n",obs[i].sat,msg);
             continue;
@@ -432,6 +453,7 @@ static int raim_fde(const obsd_t *obs, int n, const double *rs,
             resp[j]=resp_e[k++];
         }
         stat=1;
+        sol_e.eventime = sol->eventime;
         *sol=sol_e;
         sat=obs[i].sat;
         rms=rms_e;
@@ -551,8 +573,18 @@ extern int pntpos(const obsd_t *obs, int n, const nav_t *nav,
     trace(3,"pntpos  : tobs=%s n=%d\n",time_str(obs[0].time,3),n);
     
     sol->time=obs[0].time; msg[0]='\0';
+    sol->eventime = obs[0].eventime;
     
     rs=mat(6,n); dts=mat(2,n); var=mat(1,n); azel_=zeros(2,n); resp=mat(1,n);
+    
+    if (ssat) {
+        for (i=0;i<MAXSAT;i++) {
+            ssat[i].snr_rover[0]=0;
+            ssat[i].snr_base[0] =0;
+        }
+        for (i=0;i<n;i++)
+            ssat[obs[i].sat-1].snr_rover[0]=obs[i].SNR[0];
+    }
     
     if (opt_.mode!=PMODE_SINGLE) { /* for precise positioning */
 #if 0
@@ -565,11 +597,11 @@ extern int pntpos(const obsd_t *obs, int n, const nav_t *nav,
     satposs(sol->time,obs,n,nav,opt_.sateph,rs,dts,var,svh);
     
     /* estimate receiver position with pseudorange */
-    stat=estpos(obs,n,rs,dts,var,svh,nav,&opt_,sol,azel_,vsat,resp,msg);
+    stat=estpos(obs,n,rs,dts,var,svh,nav,&opt_,ssat,sol,azel_,vsat,resp,msg);
     
     /* raim fde */
     if (!stat&&n>=6&&opt->posopt[4]) {
-        stat=raim_fde(obs,n,rs,dts,var,svh,nav,&opt_,sol,azel_,vsat,resp,msg);
+        stat=raim_fde(obs,n,rs,dts,var,svh,nav,&opt_,ssat,sol,azel_,vsat,resp,msg);
     }
     /* estimate receiver velocity with doppler */
     if (stat) estvel(obs,n,rs,dts,nav,&opt_,sol,azel_,vsat);
@@ -582,12 +614,10 @@ extern int pntpos(const obsd_t *obs, int n, const nav_t *nav,
             ssat[i].vs=0;
             ssat[i].azel[0]=ssat[i].azel[1]=0.0;
             ssat[i].resp[0]=ssat[i].resc[0]=0.0;
-            ssat[i].snr[0]=0;
         }
         for (i=0;i<n;i++) {
             ssat[obs[i].sat-1].azel[0]=azel_[  i*2];
             ssat[obs[i].sat-1].azel[1]=azel_[1+i*2];
-            ssat[obs[i].sat-1].snr[0]=obs[i].SNR[0];
             if (!vsat[i]) continue;
             ssat[obs[i].sat-1].vs=1;
             ssat[obs[i].sat-1].resp[0]=resp[i];

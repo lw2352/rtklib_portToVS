@@ -149,9 +149,6 @@
     <ClCompile Include="src\skytraq.c">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\ss2.c">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\tersus.c">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -162,6 +159,12 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="rtkrcv.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\comnav.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\swiftnav.c">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

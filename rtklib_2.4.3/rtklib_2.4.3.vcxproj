@@ -70,6 +70,7 @@
     <ClCompile Include="rtkrcv.c" />
     <ClCompile Include="src\binex.c" />
     <ClCompile Include="src\cmr.c" />
+    <ClCompile Include="src\comnav.c" />
     <ClCompile Include="src\convgpx.c" />
     <ClCompile Include="src\convkml.c" />
     <ClCompile Include="src\convrnx.c" />
@@ -108,9 +109,9 @@
     <ClCompile Include="src\septentrio.c" />
     <ClCompile Include="src\skytraq.c" />
     <ClCompile Include="src\solution.c" />
-    <ClCompile Include="src\ss2.c" />
     <ClCompile Include="src\stream.c" />
     <ClCompile Include="src\streamsvr.c" />
+    <ClCompile Include="src\swiftnav.c" />
     <ClCompile Include="src\tersus.c" />
     <ClCompile Include="src\tides.c" />
     <ClCompile Include="src\tle.c" />
