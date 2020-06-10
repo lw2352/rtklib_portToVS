@@ -180,7 +180,13 @@
     <None Include="rtk.conf">
       <Filter>源文件</Filter>
     </None>
-    <None Include="data\3.nav">
+    <None Include="data\1.obs">
+      <Filter>data</Filter>
+    </None>
+    <None Include="data\2.nav">
+      <Filter>data</Filter>
+    </None>
+    <None Include="data\2.obs">
       <Filter>data</Filter>
     </None>
     <None Include="data\3.obs">

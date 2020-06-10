@@ -123,7 +123,9 @@
     <ClInclude Include="vt.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="data\3.nav" />
+    <None Include="data\1.obs" />
+    <None Include="data\2.nav" />
+    <None Include="data\2.obs" />
     <None Include="data\3.obs" />
     <None Include="data\4.nav" />
     <None Include="data\4.obs" />
