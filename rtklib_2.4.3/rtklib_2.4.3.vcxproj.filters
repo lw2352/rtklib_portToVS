@@ -12,6 +12,9 @@
     <Filter Include="data">
       <UniqueIdentifier>{aa9358c0-950c-460a-8793-f0bce33a6ee4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="MLAMBDA">
+      <UniqueIdentifier>{bf379537-7a67-457e-8d7b-54f59bc54b80}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\convgpx.c">
@@ -167,6 +170,18 @@
     <ClCompile Include="src\swiftnav.c">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="MLAMBDA\ARLambda.cpp">
+      <Filter>MLAMBDA</Filter>
+    </ClCompile>
+    <ClCompile Include="MLAMBDA\MathUtils.cpp">
+      <Filter>MLAMBDA</Filter>
+    </ClCompile>
+    <ClCompile Include="MLAMBDA\MLAMBDA.cpp">
+      <Filter>MLAMBDA</Filter>
+    </ClCompile>
+    <ClCompile Include="MLAMBDA\pch.cpp">
+      <Filter>MLAMBDA</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\rtklib.h">
@@ -175,11 +190,20 @@
     <ClInclude Include="vt.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="MLAMBDA\ARLambda.h">
+      <Filter>MLAMBDA</Filter>
+    </ClInclude>
+    <ClInclude Include="MLAMBDA\MathUtils.h">
+      <Filter>MLAMBDA</Filter>
+    </ClInclude>
+    <ClInclude Include="MLAMBDA\MLAMBDA.h">
+      <Filter>MLAMBDA</Filter>
+    </ClInclude>
+    <ClInclude Include="MLAMBDA\pch.h">
+      <Filter>MLAMBDA</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="rtk.conf">
-      <Filter>源文件</Filter>
-    </None>
     <None Include="data\1.obs">
       <Filter>data</Filter>
     </None>
@@ -197,6 +221,9 @@
     </None>
     <None Include="data\4.obs">
       <Filter>data</Filter>
+    </None>
+    <None Include="rtk.conf">
+      <Filter>头文件</Filter>
     </None>
   </ItemGroup>
 </Project>

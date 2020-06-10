@@ -109,7 +109,7 @@ void main()
 	filopt_t filopt={""};
 	char* infile[]={{"D:\\Documents\\Visual Studio 2019\\rtklib_portToVS\\rtklib_2.4.3\\data\\3.obs"},
 					{"D:\\Documents\\Visual Studio 2019\\rtklib_portToVS\\rtklib_2.4.3\\data\\4.obs"},
-					{"D:\\Documents\\Visual Studio 2019\\rtklib_portToVS\\rtklib_2.4.3\\data\\3.nav"},
+					{"D:\\Documents\\Visual Studio 2019\\rtklib_portToVS\\rtklib_2.4.3\\data\\4.nav"},
 	};
 	char* outfile="D:\\Documents\\Visual Studio 2019\\rtklib_portToVS\\rtklib_2.4.3\\data\\pos.pos";
 	
