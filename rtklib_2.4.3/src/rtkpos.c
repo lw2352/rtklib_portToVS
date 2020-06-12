@@ -1252,6 +1252,7 @@ static int ddres(rtk_t *rtk, const nav_t *nav, const obsd_t *obs, double dt, con
             tropr[i]=prectrop(rtk->sol.time,posr,1,azel+ir[i]*2,opt,x,dtdxr+i*3);
         }
     }
+    //大循环，对应每一个频率
     /* step through sat systems: m=0:gps/sbs,1:glo,2:gal,3:bds 4:qzs*/
     for (m=0;m<5;m++) { 
 
@@ -1260,7 +1261,7 @@ static int ddres(rtk_t *rtk, const nav_t *nav, const obsd_t *obs, double dt, con
         {
             frq=f%nf;code=f<nf?0:1;
 
-            //寻找仰角最高的参考卫星
+            //寻找仰角最高的参考卫星,为sat[i]
             /* find reference satellite with highest elevation, set to i */
             for (i=-1,j=0;j<ns;j++) {
                 sysi=rtk->ssat[sat[j]-1].sys;
@@ -1270,6 +1271,7 @@ static int ddres(rtk_t *rtk, const nav_t *nav, const obsd_t *obs, double dt, con
             }
             if (i<0) continue;
         
+            //小循环，对每一种导航系统，对每一颗卫星，计算双差
             /* calculate double differences of residuals (code/phase) for each sat */
             for (j=0;j<ns;j++) {
                 if (i==j) continue;  /* skip ref sat */
@@ -1282,21 +1284,27 @@ static int ddres(rtk_t *rtk, const nav_t *nav, const obsd_t *obs, double dt, con
                 lamj=nav->lam[sat[j]-1][frq];
                 if (lami<=0.0||lamj<=0.0) continue;
                 if (H) {
-                    Hi=H+nv*rtk->nx;//rtk->nx=122(float状态解个数),nv在当前循环里面会累加vflg[nv++]，Hi和H都是指针
+                    Hi=H+nv*rtk->nx;//rtk->nx=(float状态解个数),nv在当前循环里面会累加(vflg[nv++])，Hi和H都是指针
                     for (k=0;k<rtk->nx;k++) Hi[k]=0.0;
                 }
             
+                //用传入的没有差分的相位/码残差y计算双差残差v，并计算对应的H
                 /* double-differenced measurements from 2 receivers and 2 sats in meters */
                 v[nv]=(y[f+iu[i]*nf*2]-y[f+ir[i]*nf*2])-
-                      (y[f+iu[j]*nf*2]-y[f+ir[j]*nf*2]);
-            
+                      (y[f+iu[j]*nf*2]-y[f+ir[j]*nf*2]);           
                 /* partial derivatives by rover position, combine unit vectors from two sats */
                 if (H) {
-                    for (k=0;k<3;k++) {
+                    for (k=0;k<3;k++) 
+                    {
+                        double a = -e[k + iu[i] * 3];
+                        double b = e[k + iu[i] * 3];
+                        Hi[k] = a + b;
+                        //求参考星到其他卫星的向量
                         Hi[k]=-e[k+iu[i]*3]+e[k+iu[j]*3];  /* translation of innovation to position states */
                     }
+                    tracemat(1, Hi, 3, 1, 7 ,4);
                 }
-                //电离层
+                //若要估计电离层参数，模式IONOOPT_EST，用电离层延迟因子修正v和H
                 if (opt->ionoopt==IONOOPT_EST) {
                     /* adjust double-differenced measurements by double-differenced ionospheric delay term */
                     fi=lami/lam_carr[0]; fj=lamj/lam_carr[0];
@@ -1308,7 +1316,7 @@ static int ddres(rtk_t *rtk, const nav_t *nav, const obsd_t *obs, double dt, con
                         Hi[II(sat[j],opt)]=-didxj;
                     }
                 }
-                //对流层
+                //若要估计对流层参数，模式TROPOPT_EST，用对流层延迟因子修正v和H
                 if (opt->tropopt==TROPOPT_EST||opt->tropopt==TROPOPT_ESTG) {
                     /* adjust double-differenced measurements by double-differenced tropospheric delay term */
                     v[nv]-=(tropu[i]-tropu[j])-(tropr[i]-tropr[j]);
@@ -1318,7 +1326,9 @@ static int ddres(rtk_t *rtk, const nav_t *nav, const obsd_t *obs, double dt, con
                         Hi[IT(1,opt)+k]=-(dtdxr[k+i*3]-dtdxr[k+j*3]);
                     }
                 }
-                if (!code) {
+                if (!code) 
+                {
+                    //用相位偏移修正v和H
                     /* adjust phase residual by double-differenced phase-bias term,
                           IB=look up index by sat&freq */
                     if (opt->ionoopt!=IONOOPT_IFLC) {
@@ -1337,8 +1347,7 @@ static int ddres(rtk_t *rtk, const nav_t *nav, const obsd_t *obs, double dt, con
                         }
                     }
                 }
-        
-    
+          
                 /* adjust double-difference for glonass sats */
                 if (sysi==SYS_GLO&&sysj==SYS_GLO) {
                     if (rtk->opt.glomodear==GLO_ARMODE_AUTOCAL && frq<NFREQGLO) {
@@ -1377,7 +1386,7 @@ static int ddres(rtk_t *rtk, const nav_t *nav, const obsd_t *obs, double dt, con
                 /* adjust threshold by error stdev ratio unless one of the phase biases was just initialized*/
                 threshadj=code||(rtk->P[ii+rtk->nx*ii]>SQR(rtk->opt.std[0]/2))||
                           (rtk->P[jj+rtk->nx*jj]>SQR(rtk->opt.std[0]/2))?opt->eratio[frq]:1;
-
+                //根据选项maxinno的值检测是否要排除此观测数据
                 if (opt->maxinno>0.0&&fabs(v[nv])>opt->maxinno*threshadj) {
                        rtk->ssat[sat[j]-1].vsat[frq]=0;
                        rtk->ssat[sat[j]-1].rejc[frq]++;
@@ -1385,7 +1394,7 @@ static int ddres(rtk_t *rtk, const nav_t *nav, const obsd_t *obs, double dt, con
                             sat[i],sat[j],code?"P":"L",frq+1,v[nv]);
                     continue;
                 }
-
+                //计算单差的测量误差协方差Ri、Rj
                 /* single-differenced measurement error variances */
                 Ri[nv] = varerr(sat[i], sysi, azel[1+iu[i]*2], 
                                 0.25 * rtk->ssat[sat[i]-1].snr_rover[frq],
@@ -1411,12 +1420,20 @@ static int ddres(rtk_t *rtk, const nav_t *nav, const obsd_t *obs, double dt, con
                 trace(3,"sat=%3d-%3d %s%d v=%13.3f R=%9.6f %9.6f icb=%9.3f lock=%5d x=%9.3f\n",sat[i],
                         sat[j],code?"P":"L",frq+1,v[nv],Ri[nv],Rj[nv],icb,
                         rtk->ssat[sat[j]-1].lock[frq],rtk->x[IB(sat[j],frq,&rtk->opt)]);
-            
+                //设置数据有效标志
                 vflg[nv++]=(sat[i]<<16)|(sat[j]<<8)|((code?1:0)<<4)|(frq);
                 nb[b]++;
             }
             b++;
         }
+
+        /*if (H == NULL && P != NULL)
+        {
+            if (fabs(v[nv] > 1) && f < nf)
+            {
+                rtk->opt.exsats[sat[j] - 1] = 1;
+            }
+        }*/
     }    /* end of system loop */
     
     /* baseline length constraint for moving baseline */
@@ -1885,10 +1902,6 @@ static int manage_amb_LAMBDA(rtk_t *rtk, double *bias, double *xa, const int *sa
 static int valpos(rtk_t *rtk, const double *v, const double *R, const int *vflg,
                   int nv, double thres)
 {
-#if 0
-    prcopt_t *opt=&rtk->opt;
-    double vv=0.0;
-#endif
     double fact=thres*thres;
     int i,stat=1,sat1,sat2,type,freq;
     char *stype;
@@ -1906,23 +1919,6 @@ static int valpos(rtk_t *rtk, const double *v, const double *R, const int *vflg,
         errmsg(rtk,"large residual (sat=%2d-%2d %s%d v=%6.3f sig=%.3f)\n",
               sat1,sat2,stype,freq+1,v[i],SQRT(R[i+i*nv]));
     }
-#if 0 /* omitted v.2.4.0 */
-    if (stat&&nv>NP(opt)) {
-        
-        /* chi-square validation */
-        for (i=0;i<nv;i++) vv+=v[i]*v[i]/R[i+i*nv];
-        
-        if (vv>chisqr[nv-NP(opt)-1]) {
-            errmsg(rtk,"residuals validation failed (nv=%d np=%d vv=%.2f cs=%.2f)\n",
-                   nv,NP(opt),vv,chisqr[nv-NP(opt)-1]);
-            stat=0;
-        }
-        else {
-            trace(3,"valpos : validation ok (%s nv=%d np=%d vv=%.2f cs=%.2f)\n",
-                  time_str(rtk->sol.time,2),nv,NP(opt),vv,chisqr[nv-NP(opt)-1]);
-        }
-    }
-#endif
     return stat;
 }
 /* relpos()relative positioning ------------------------------------------------------
@@ -1978,6 +1974,7 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
         free(rs); free(dts); free(var); free(y); free(e); free(azel);
         return 0;
     }
+    
     /* time-interpolation of residuals (for post-processing) - defaults to off */
     if (opt->intpref) {
         dt=intpres(time,obs+nu,nr,nav,rtk,y+nu*nf*2);
@@ -2031,6 +2028,7 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
             stat=SOLQ_NONE;
             break;
         }
+        tracemat(1, e, 3, n, 7, 4);
         /* calculate double-differenced residuals and create state matrix from sat angles 
                 O rtk->ssat[i].resp[j] = residual pseudorange error
                 O rtk->ssat[i].resc[j] = residual carrier phase error
@@ -2043,6 +2041,7 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
                 O H = partial derivatives
                 O R = double diff measurement error covariances
                 O vflg = list of sats used for dd  */
+        //双差残差v、雅各比矩阵H、DD测量误差协方差阵R
         if ((nv=ddres(rtk,nav,obs,dt,xp,Pp,sat,y,e,azel,iu,ir,ns,v,H,R,vflg))<1) {
             errmsg(rtk,"no double-differenced residual\n");
             stat=SOLQ_NONE;
@@ -2060,6 +2059,7 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
         }
         trace(4,"x(%d)=",i+1); tracemat(4,xp,1,NR(opt),13,4);
     }
+    //针对验后浮点解，再进行行流动站zdres、ddres、valpos操作，注意这时候ddres中的H=NULL，即表示H不打印，R矩阵不变，是打印的
     /* calc zero diff residuals again after kalman filter update */
     if (stat!=SOLQ_NONE&&zdres(0,obs,nu,rs,dts,var,svh,nav,xp,opt,0,y,e,azel)) {
         

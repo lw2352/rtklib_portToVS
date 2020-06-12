@@ -100,7 +100,7 @@ static opt_t rcvopts[] = {
 void main()
 {
 	//rtkrcv();
-    int level = 5;
+    int level = 2;
 	traceopen(TRACEFILE);
 	tracelevel(level);
 	char file[MAXSTR] = "";
@@ -108,9 +108,9 @@ void main()
 	prcopt_t prcopt=prcopt_default;
 	solopt_t solopt=solopt_default;
 	filopt_t filopt={""};
-	char* infile[]={{"D:\\Documents\\Visual Studio 2019\\rtklib_portToVS\\rtklib_2.4.3\\data\\3.obs"},
-					{"D:\\Documents\\Visual Studio 2019\\rtklib_portToVS\\rtklib_2.4.3\\data\\4.obs"},
-					{"D:\\Documents\\Visual Studio 2019\\rtklib_portToVS\\rtklib_2.4.3\\data\\4.nav"},
+	char* infile[]={{"D:\\Documents\\Visual Studio 2019\\rtklib_portToVS\\rtklib_2.4.3\\data\\1.obs"},
+					{"D:\\Documents\\Visual Studio 2019\\rtklib_portToVS\\rtklib_2.4.3\\data\\2.obs"},
+					{"D:\\Documents\\Visual Studio 2019\\rtklib_portToVS\\rtklib_2.4.3\\data\\2.nav"},
 	};
 	char* outfile="D:\\Documents\\Visual Studio 2019\\rtklib_portToVS\\rtklib_2.4.3\\data\\pos.pos";
 	

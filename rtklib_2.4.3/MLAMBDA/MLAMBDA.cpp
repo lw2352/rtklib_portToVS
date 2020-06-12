@@ -109,6 +109,8 @@ int test_filter_(double* x_in, double* P_in, double* H_in,
  double* v_in, double* R_in, int n, int m,
 	double* xp_out, double* Pp_out)
 {
+	if (x_in[0] == 0.0)
+		return -1;
 	VectorXd x= Map<Matrix<double, Dynamic, Dynamic, ColMajor> >(x_in, n, 1);
 	MatrixXd P = Map<Matrix<double, Dynamic, Dynamic, ColMajor> >(P_in, n, n);
 	MatrixXd H = Map<Matrix<double, Dynamic, Dynamic, ColMajor> >(H_in, n, m);

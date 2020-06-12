@@ -1148,7 +1148,7 @@ static int filter_(const double *x, const double *P, const double *H,
     return info;
 }
 
-//filter 函数首先进行状态预测，然后调用 filter_ 函数进行校正，与公式一一对应，但需要注意的就是代码里的H是公式中的H的转置
+//代码里的H是公式中的H的转置,矩阵mat是列优先存储
 extern int filter(double *x, double *P, const double *H, const double *v,
                   const double *R, int n, int m)
 {
@@ -1159,6 +1159,7 @@ extern int filter(double *x, double *P, const double *H, const double *v,
     ix=imat(n,1); for (i=k=0;i<n;i++) if (x[i]!=0.0&&P[i+i*n]>0.0) ix[k++]=i;
     x_=mat(k,1); xp_=mat(k,1); P_=mat(k,k); Pp_=mat(k,k); H_=mat(k,m);
     /* compress array by removing zero elements to save computation time */
+    
     for (i=0;i<k;i++) {
         x_[i]=x[ix[i]];
         for (j=0;j<k;j++) P_[i+j*k]=P[ix[i]+ix[j]*n];
