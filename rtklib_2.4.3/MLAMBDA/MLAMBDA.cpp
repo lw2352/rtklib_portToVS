@@ -116,13 +116,13 @@ int test_filter_(double* x_in, double* P_in, double* H_in,
 	MatrixXd R = Map<Matrix<double, Dynamic, Dynamic, ColMajor> >(R_in, m, m);
 
 	double x1[8] = {0}, p1[8 * 8] = { 0 }, h1[8 * 8] = { 0 }, v1[8] = { 0 }, r1[8 * 8] = { 0 };
-
+	
 	Map<MatrixXd>(x1, n, 1) = x;
 	Map<MatrixXd>(p1, n, n) = P;
 	Map<MatrixXd>(h1, n, m) = H;
 	Map<MatrixXd>(v1, m, 1) = v;
 	Map<MatrixXd>(r1, m, m) = R;
-
+	
 	MatrixXd K = P * H * ((H.transpose() * P * H + R).inverse());
 	VectorXd xp = x + K * v;
 	Eigen::MatrixXd I = Eigen::MatrixXd::Identity(x.size(), x.size());

@@ -1147,6 +1147,8 @@ static int filter_(const double *x, const double *P, const double *H,
     free(F); free(Q); free(K); free(I);
     return info;
 }
+
+//filter 函数首先进行状态预测，然后调用 filter_ 函数进行校正，与公式一一对应，但需要注意的就是代码里的H是公式中的H的转置
 extern int filter(double *x, double *P, const double *H, const double *v,
                   const double *R, int n, int m)
 {
