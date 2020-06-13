@@ -100,7 +100,7 @@ static opt_t rcvopts[] = {
 void main()
 {
 	//rtkrcv();
-    int level = 2;
+    int level = 3;
 	traceopen(TRACEFILE);
 	tracelevel(level);
 	char file[MAXSTR] = "";

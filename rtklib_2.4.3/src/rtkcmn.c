@@ -1166,8 +1166,8 @@ extern int filter(double *x, double *P, const double *H, const double *v,
         for (j=0;j<m;j++) H_[i+j*k]=H[ix[i]+j*n];
     }
     /* do kalman filter state update on compressed arrays */
-    //info=filter_(x_,P_,H_,v,R,k,m,xp_,Pp_);
-    info = test_filter_(x_, P_, H_, v, R, k, m, xp_, Pp_);
+    info=filter_(x_,P_,H_,v,R,k,m,xp_,Pp_);
+    //info = test_filter_(x_, P_, H_, v, R, k, m, xp_, Pp_);
     
     /* copy values from compressed arrays back to full arrays */
     for (i=0;i<k;i++) {
