@@ -1433,16 +1433,33 @@ static int ddres(rtk_t *rtk, const nav_t *nav, const obsd_t *obs, double dt, con
             }
             b++;
         }
+        
 
-        /*if (H == NULL && P != NULL)
-        {
-            if (fabs(v[nv] > 1) && f < nf)
-            {
-                rtk->opt.exsats[sat[j] - 1] = 1;
-            }
-        }*/
     }    /* end of system loop */
     
+    //test
+    if (H == NULL && P != NULL)//限定为验后残差的ddres
+    {
+        //if (fabs(v[nv] > 1) && f < nf)//参数1可以自定义，作为阈值
+        double a = fabs(v[nv]);
+        if (a > 1)
+        {
+            rtk->opt.exsats[sat[j - 1]] = 1;//排除非参考星i外的卫星j
+        }
+    }
+    if (H == NULL && P == NULL)//限定为模糊度固定后的ddres
+    {
+        //通过（大于0.1的个数）和（所有载波方程的个数*1/2）的关系可以甄别出是飞点
+        //如果是飞点，建议重置模糊度
+        //if (fabs(v[nv] > 0.1) && f < nf)
+        double a = fabs(v[nv]);
+        if (a > 0.1)
+        {
+            int fpcnt = 0;
+            fpcnt++;
+        }
+    }
+
     /* baseline length constraint for moving baseline */
     if (opt->mode==PMODE_MOVEB&&constbl(rtk,x,P,v,H,Ri,Rj,nv)) {
         vflg[nv++]=3<<4;

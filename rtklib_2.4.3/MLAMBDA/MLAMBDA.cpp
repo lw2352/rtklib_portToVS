@@ -5,6 +5,7 @@
 #include "ARLambda.h"
 #include "MLAMBDA.h"
 
+#include <vector>
 using namespace std;
 using namespace Eigen;
 
@@ -133,6 +134,47 @@ int test_filter_(double* x_in, double* P_in, double* H_in,
 	Map<MatrixXd>(xp_out, n, 1) = xp;
 	Map<MatrixXd>(Pp_out, n, n) = Pp;
 
+	return 0;
+}
+
+#define N 5
+int resultFilter(double* x, double* y, double* z)
+{
+	static vector<double> X, Y, Z;
+	//X.resize(N);
+	//Y.resize(N);
+	//Z.resize(N);
+	if (X.size() < N)
+	{
+		X.push_back(*x);
+		Y.push_back(*y);
+		Z.push_back(*z);
+	}
+	else
+	{
+		sort(X.begin(), X.end());
+		sort(Y.begin(), Y.end());
+		sort(Z.begin(), Z.end());
+		
+		X.erase(X.begin());
+		X.erase(X.end() - 1);
+		Y.erase(Y.begin());
+		Y.erase(Y.end()-1);
+		Z.erase(Z.begin());
+		Z.erase(Z.end()-1);
+		int n = (int)N - 2;
+		*x = *y = *z = 0;
+		for (int i = 0; i < n; i++)
+		{
+			*x += X[i]/n;
+			*y += Y[i]/n;
+			*z += Z[i]/n;
+		}
+		X.clear();
+		Y.clear();
+		Z.clear();
+		return 1;
+	}
 	return 0;
 }
 

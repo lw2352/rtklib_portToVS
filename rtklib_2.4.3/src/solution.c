@@ -1122,20 +1122,32 @@ extern int readsolstat(char *files[], int nfile, solstatbuf_t *statbuf)
     return readsolstatt(files,nfile,time,time,0.0,statbuf);
 }
 /* output solution as the form of x/y/z-ecef ---------------------------------*/
-static int outecef(unsigned char *buff, const char *s, const sol_t *sol,
-                   const solopt_t *opt)
+static int outecef(unsigned char* buff, const char* s, const sol_t* sol,
+    const solopt_t* opt)
 {
-    const char *sep=opt2sep(opt);
-    char *p=(char *)buff;
-    
-    trace(3,"outecef:\n\n");
-    
-    p+=sprintf(p,"%s%s%14.4f%s%14.4f%s%14.4f%s%3d%s%3d%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%6.2f%s%6.1f",
-               s,sep,sol->rr[0],sep,sol->rr[1],sep,sol->rr[2],sep,sol->stat,sep,
-               sol->ns,sep,SQRT(sol->qr[0]),sep,SQRT(sol->qr[1]),sep,SQRT(sol->qr[2]),
-               sep,sqvar(sol->qr[3]),sep,sqvar(sol->qr[4]),sep,sqvar(sol->qr[5]),
-               sep,sol->age,sep,sol->ratio);
-    
+    const char* sep = opt2sep(opt);
+    char* p = (char*)buff;
+
+    trace(3, "outecef:\n\n");
+    if (1)
+    {
+        if (resultFilter(&sol->rr[0], &sol->rr[1], &sol->rr[2]) == 1)
+        {
+            p += sprintf(p, "%s%s%14.4f%s%14.4f%s%14.4f%s%3d%s%3d%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%6.2f%s%6.1f",
+                s, sep, sol->rr[0], sep, sol->rr[1], sep, sol->rr[2], sep, sol->stat, sep,
+                sol->ns, sep, SQRT(sol->qr[0]), sep, SQRT(sol->qr[1]), sep, SQRT(sol->qr[2]),
+                sep, sqvar(sol->qr[3]), sep, sqvar(sol->qr[4]), sep, sqvar(sol->qr[5]),
+                sep, sol->age, sep, sol->ratio);
+        }
+    }
+    else
+    {
+        p += sprintf(p, "%s%s%14.4f%s%14.4f%s%14.4f%s%3d%s%3d%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%6.2f%s%6.1f",
+            s, sep, sol->rr[0], sep, sol->rr[1], sep, sol->rr[2], sep, sol->stat, sep,
+            sol->ns, sep, SQRT(sol->qr[0]), sep, SQRT(sol->qr[1]), sep, SQRT(sol->qr[2]),
+            sep, sqvar(sol->qr[3]), sep, sqvar(sol->qr[4]), sep, sqvar(sol->qr[5]),
+            sep, sol->age, sep, sol->ratio);
+    }
     if (opt->outvel) { /* output velocity */
         p+=sprintf(p,"%s%10.5f%s%10.5f%s%10.5f%s%9.5f%s%8.5f%s%8.5f%s%8.5f%s%8.5f%s%8.5f",
                    sep,sol->rr[3],sep,sol->rr[4],sep,sol->rr[5],sep,
