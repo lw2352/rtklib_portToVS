@@ -1128,7 +1128,7 @@ static int outecef(unsigned char* buff, const char* s, const sol_t* sol,
     const char* sep = opt2sep(opt);
     char* p = (char*)buff;
 
-    trace(3, "outecef:\n\n");
+    trace(2, "outecef:\n");
     if (1)
     {
         if (resultFilter(&sol->rr[0], &sol->rr[1], &sol->rr[2]) == 1)
@@ -1138,6 +1138,9 @@ static int outecef(unsigned char* buff, const char* s, const sol_t* sol,
                 sol->ns, sep, SQRT(sol->qr[0]), sep, SQRT(sol->qr[1]), sep, SQRT(sol->qr[2]),
                 sep, sqvar(sol->qr[3]), sep, sqvar(sol->qr[4]), sep, sqvar(sol->qr[5]),
                 sep, sol->age, sep, sol->ratio);
+            p += sprintf(p, "\n");
+            int n = p - (char*)buff;
+            return n;
         }
     }
     else
@@ -1147,7 +1150,11 @@ static int outecef(unsigned char* buff, const char* s, const sol_t* sol,
             sol->ns, sep, SQRT(sol->qr[0]), sep, SQRT(sol->qr[1]), sep, SQRT(sol->qr[2]),
             sep, sqvar(sol->qr[3]), sep, sqvar(sol->qr[4]), sep, sqvar(sol->qr[5]),
             sep, sol->age, sep, sol->ratio);
+        p += sprintf(p, "\n");
+        int n = p - (char*)buff;
+        return n;
     }
+
     if (opt->outvel) { /* output velocity */
         p+=sprintf(p,"%s%10.5f%s%10.5f%s%10.5f%s%9.5f%s%8.5f%s%8.5f%s%8.5f%s%8.5f%s%8.5f",
                    sep,sol->rr[3],sep,sol->rr[4],sep,sol->rr[5],sep,
@@ -1155,8 +1162,8 @@ static int outecef(unsigned char* buff, const char* s, const sol_t* sol,
                    sep,sqvar(sol->qv[3]),sep,sqvar(sol->qv[4]),sep,
                    sqvar(sol->qv[5]));
     }
-    p+=sprintf(p,"\n");
-    return p-(char *)buff;
+    
+    return 0;
 }
 /* output solution as the form of lat/lon/height -----------------------------*/
 static int outpos(unsigned char *buff, const char *s, const sol_t *sol,

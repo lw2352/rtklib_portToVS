@@ -137,7 +137,7 @@ int test_filter_(double* x_in, double* P_in, double* H_in,
 	return 0;
 }
 
-#define N 5
+#define N 6//需为偶数，让输出的时间格式正确
 int resultFilter(double* x, double* y, double* z)
 {
 	static vector<double> X, Y, Z;
