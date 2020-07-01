@@ -1064,7 +1064,7 @@ static int zdres(int base, const obsd_t *obs, int n, const double *rs,
               obs[i].sat,rs[i*6],rs[1+i*6],rs[2+i*6],dts[i*2],azel[i*2]*R2D,
               azel[1+i*2]*R2D);
     }
-    trace(3,"y=\n"); tracemat(3,y,nf*2,n,13,3);
+    trace(5,"y=\n"); tracemat(3,y,nf*2,n,13,3);
     
     return 1;
 }
