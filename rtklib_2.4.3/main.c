@@ -99,9 +99,10 @@ static opt_t rcvopts[] = {
 
 void main()
 {
+#if 1
 	rtkrcv();
-#if 0
-    int level = 3;
+#else
+    int level = 1;
 	traceopen(TRACEFILE);
 	tracelevel(level);
 	char file[MAXSTR] = "";
@@ -113,7 +114,7 @@ void main()
 					{"D:\\Documents\\Visual Studio 2019\\rtklib_portToVS\\rtklib_2.4.3\\data\\8.obs"},
 					{"D:\\Documents\\Visual Studio 2019\\rtklib_portToVS\\rtklib_2.4.3\\data\\8.nav"},
 	};
-	char* outfile="D:\\Documents\\Visual Studio 2019\\rtklib_portToVS\\rtklib_2.4.3\\data\\pos.pos";
+	char* outfile="D:\\Documents\\Visual Studio 2019\\rtklib_portToVS\\rtklib_2.4.3\\data\\8.pos";
 	
 	//prcopt.mode= PMODE_STATIC;
 	//prcopt.navsys = SYS_GPS;

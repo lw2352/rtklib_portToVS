@@ -1128,27 +1128,64 @@ static int outecef(unsigned char* buff, const char* s, const sol_t* sol,
     const char* sep = opt2sep(opt);
     char* p = (char*)buff;
 
-    
+#if 1
+    static int ret=0;
+    static double x, y, z;//滑动平均后坐标
+    static int n;//窗口大小
+    static int count;//计数，动态窗口大小作用时间
     if (opt->timef == 1)
     {
-        if (1)
+        
+        double a = sol->rr[0] - x;
+        double b = sol->rr[1] - y;
+        a = fabs(a);
+        b = fabs(b);
+        if (ret == 0 || count == 0)
         {
-            //对结果进行处理，最后一个参数是滑动窗口的大小
-            if (resultFilter(&sol->rr[0], &sol->rr[1], &sol->rr[2], 60) == 1)
-            {
-                p += sprintf(p, "%s%s%14.4f%s%14.4f%s%14.4f%s%3d%s%3d%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%6.2f%s%6.1f",
-                    s, sep, sol->rr[0], sep, sol->rr[1], sep, sol->rr[2], sep, sol->stat, sep,
-                    sol->ns, sep, SQRT(sol->qr[0]), sep, SQRT(sol->qr[1]), sep, SQRT(sol->qr[2]),
-                    sep, sqvar(sol->qr[3]), sep, sqvar(sol->qr[4]), sep, sqvar(sol->qr[5]),
-                    sep, sol->age, sep, sol->ratio);
-                p += sprintf(p, "\n");
-                trace(1, "outecef:");
-                trace(1,"%s",buff);
-                int n = p - (char*)buff;
-                return n;
-            }
+            //默认的窗口大小
+            n = 60;
+            count = 1;
+            //fprintf(stderr, "n=%d\n", n);
         }
-        else
+        //动态改变窗口大小，需要根据实际测试进一步优化         
+        if (ret == 1 && (a > 0.01 || b > 0.01))
+        {
+            //变动窗口
+            n = 6;
+            count = 6;
+            //fprintf(stderr, "n=%d\n", n);
+            //fprintf(stderr, "time:%s,a=%14.4f,b=%14.4f\n", s,a,b);
+        }
+        //天线正在移动，没有稳定
+        if (ret == 1 && count > 0)
+        {
+            //窗口大小维持一段时间，直到count等于0
+            n = 6;
+        }
+        //天线移动一段距离后静止
+        if (ret == 1 && count == 0)
+        {
+            n = 60;
+            count = 1;
+        }
+        x = sol->rr[0], y = sol->rr[1], z = sol->rr[2];
+        //对结果进行处理，最后一个参数是滑动窗口的大小  
+        ret = resultFilter(&x, &y, &z, n);
+        count--;
+        if (ret)
+        {
+            p += sprintf(p, "%s%s%14.4f%s%14.4f%s%14.4f%s%3d%s%3d%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%6.2f%s%6.1f",
+                s, sep, x, sep, y, sep, z, sep, sol->stat, sep,
+                sol->ns, sep, SQRT(sol->qr[0]), sep, SQRT(sol->qr[1]), sep, SQRT(sol->qr[2]),
+                sep, sqvar(sol->qr[3]), sep, sqvar(sol->qr[4]), sep, sqvar(sol->qr[5]),
+                sep, sol->age, sep, sol->ratio);
+            p += sprintf(p, "\n");
+            //fprintf(stderr, "outecef:%s\n", buff);
+            int n = p - (char*)buff;
+            return n;
+        }
+    }
+#else
         {
             p += sprintf(p, "%s%s%14.4f%s%14.4f%s%14.4f%s%3d%s%3d%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%6.2f%s%6.1f",
                 s, sep, sol->rr[0], sep, sol->rr[1], sep, sol->rr[2], sep, sol->stat, sep,
@@ -1159,7 +1196,7 @@ static int outecef(unsigned char* buff, const char* s, const sol_t* sol,
             int n = p - (char*)buff;
             return n;
         }
-    }
+#endif
 
     if (opt->outvel) { /* output velocity */
         p+=sprintf(p,"%s%10.5f%s%10.5f%s%10.5f%s%9.5f%s%8.5f%s%8.5f%s%8.5f%s%8.5f%s%8.5f",
