@@ -1252,7 +1252,7 @@ static int ddres(rtk_t *rtk, const nav_t *nav, const obsd_t *obs, double dt, con
             tropr[i]=prectrop(rtk->sol.time,posr,1,azel+ir[i]*2,opt,x,dtdxr+i*3);
         }
     }
-    //大循环，对应每一个频率
+    //大循环，对应每一个系统
     /* step through sat systems: m=0:gps/sbs,1:glo,2:gal,3:bds 4:qzs*/
     for (m=0;m<5;m++) { 
 
@@ -1271,7 +1271,7 @@ static int ddres(rtk_t *rtk, const nav_t *nav, const obsd_t *obs, double dt, con
             }
             if (i<0) continue;
         
-            //小循环，对每一种导航系统，对每一颗卫星，计算双差
+            //小循环，对每一种导航系统的每一颗卫星，计算双差
             /* calculate double differences of residuals (code/phase) for each sat */
             for (j=0;j<ns;j++) 
             {

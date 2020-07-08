@@ -4,7 +4,7 @@
 #include "pch.h"
 #include "ARLambda.h"
 #include "MLAMBDA.h"
-
+#include <iomanip>
 #include <vector>
 using namespace std;
 using namespace Eigen;
@@ -137,8 +137,7 @@ int test_filter_(double* x_in, double* P_in, double* H_in,
 	return 0;
 }
 
-#define N 6//需为偶数，让输出的时间格式正确
-int resultFilter(double* x, double* y, double* z)
+/*int resultFilter(double* x, double* y, double* z)
 {
 	static vector<double> X, Y, Z;
 	//X.resize(N);
@@ -173,6 +172,33 @@ int resultFilter(double* x, double* y, double* z)
 		X.clear();
 		Y.clear();
 		Z.clear();
+		return 1;
+	}
+	return 0;
+}*/
+
+int resultFilter(double* x, double* y, double* z, int n)
+{
+	static vector<double> X, Y, Z;
+	if (X.size() < n)
+	{
+		X.push_back(*x);
+		Y.push_back(*y);
+		Z.push_back(*z);
+	}
+	if(X.size() == n)
+	{
+		//cout << setprecision(15)<< X[0] << "  " << setprecision(15) << X[1] << "  " << setprecision(15) << X[2] << "  " << endl;
+		*x = *y = *z = 0;
+		for (int i = 0; i < n; i++)
+		{
+			*x += X[i] / n;
+			*y += Y[i] / n;
+			*z += Z[i] / n;
+		}
+		X.erase(X.begin());
+		Y.erase(Y.begin());
+		Z.erase(Z.begin());
 		return 1;
 	}
 	return 0;

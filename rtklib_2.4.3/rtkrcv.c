@@ -1637,7 +1637,7 @@ int rtkrcv()
 {
     
     con_t *con[MAXCON]={0};
-    int i,start=1,port=0,outstat=0,trace=2,sock=0;
+    int i,start=1,port=0,outstat=0,trace=1,sock=0;
     char *dev="",file[MAXSTR]="";
 #if 0
     for (i=1;i<argc;i++) {
