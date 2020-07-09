@@ -181,12 +181,12 @@ int resultFilter(double* x, double* y, double* z, int n)
 {
 	static vector<double> X, Y, Z;
 	//添加数据
-	if (X.size() < n)
-	{
+	//if (X.size() < n)
+	//{
 		X.push_back(*x);
 		Y.push_back(*y);
 		Z.push_back(*z);
-	}
+	//}
 	//数据小于窗口大小时输出原始数据
 	if (X.size() < n)
 	{
@@ -211,6 +211,7 @@ int resultFilter(double* x, double* y, double* z, int n)
 		X.erase(X.begin());
 		Y.erase(Y.begin());
 		Z.erase(Z.begin());
+
 		return 1;
 	}
 }

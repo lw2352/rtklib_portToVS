@@ -1129,49 +1129,69 @@ static int outecef(unsigned char* buff, const char* s, const sol_t* sol,
     char* p = (char*)buff;
 
 #if 1
-    static int ret=0;
-    static double x, y, z;//滑动平均后坐标
-    static int n;//窗口大小
-    static int count;//计数，动态窗口大小作用时间
+    static int ret=1;
+    static double x, y, z;//滑动平均后的坐标
+    static double x0, y0;//上一个历元的原始坐标
+    static int n=60;//窗口大小
+    static int count=1;//计数，动态窗口大小作用时间
+    static int status = 0;
+    double dectectValue = 0.01;
     if (opt->timef == 1)
     {
-        
-        double a = sol->rr[0] - x;
-        double b = sol->rr[1] - y;
+        //两个时刻的坐标差
+        double a = sol->rr[0] - x0;
+        double b = sol->rr[1] - y0;
         a = fabs(a);
         b = fabs(b);
-        if (ret == 0 || count == 0)
-        {
-            //默认的窗口大小
-            n = 60;
-            count = 1;
-            //fprintf(stderr, "n=%d\n", n);
-        }
-        //动态改变窗口大小，需要根据实际测试进一步优化         
-        if (ret == 1 && (a > 0.01 || b > 0.01))
+
+        //天线发生移动         
+        if (a > dectectValue || b > dectectValue)
         {
             //变动窗口
-            n = 6;
-            count = 6;
-            //fprintf(stderr, "n=%d\n", n);
-            //fprintf(stderr, "time:%s,a=%14.4f,b=%14.4f\n", s,a,b);
-        }
-        //天线正在移动，没有稳定
-        if (ret == 1 && count > 0)
-        {
-            //窗口大小维持一段时间，直到count等于0
-            n = 6;
+            n = 2;
+            count = 4;
+            status = 1;
         }
         //天线移动一段距离后静止
-        if (ret == 1 && count == 0)
+        if (status==1 && count == 0)
+        {
+            //稍微加大窗口
+            n = 4;
+            count = 6;
+            status = 2;
+        }
+        //检验是否长时间稳定，再扩大窗口
+        if (status == 2 && count == 0)
+        {
+            n = 10;
+            count = 20;
+            status = 3;
+        }
+        if (status == 3 && count == 0)
+        {
+            n = 20;
+            count = 30;
+            status = 4;
+        }
+        if (status == 4 && count == 0)
+        {
+            n = 40;
+            count = 30;
+            status = 5;
+        }
+        //恢复原状态
+        if (status == 5 && count == 0)
         {
             n = 60;
             count = 1;
+            status = 5;//等待一段时间
         }
         x = sol->rr[0], y = sol->rr[1], z = sol->rr[2];
+        x0 = x, y0 = y;
         //对结果进行处理，最后一个参数是滑动窗口的大小  
-        ret = resultFilter(&x, &y, &z, n);
+        resultFilter(&x, &y, &z, n);
         count--;
+        fprintf(stderr, "time:%s, n=%d, count=%d, a=%4.4f, b=%4.4f\n", s, n, count, a, b);
         if (ret)
         {
             p += sprintf(p, "%s%s%14.4f%s%14.4f%s%14.4f%s%3d%s%3d%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%6.2f%s%6.1f",
