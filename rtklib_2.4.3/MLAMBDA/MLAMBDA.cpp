@@ -106,7 +106,7 @@ int test_lambda(int n, int m, double* a, double* Q, double* F, double* s)
 * notes  : matirix stored by column-major order (fortran convention)
 *          if state x[i]==0.0, not updates state x[i]/P[i+i*n]
 *-----------------------------------------------------------------------------*/
-int test_filter_(double* x_in, double* P_in, double* H_in,
+int test_filter(double* x_in, double* P_in, double* H_in,
  double* v_in, double* R_in, int n, int m,
 	double* xp_out, double* Pp_out)
 {
@@ -118,7 +118,7 @@ int test_filter_(double* x_in, double* P_in, double* H_in,
 	VectorXd v = Map<Matrix<double, Dynamic, Dynamic, ColMajor> >(v_in, m, 1);
 	MatrixXd R = Map<Matrix<double, Dynamic, Dynamic, ColMajor> >(R_in, m, m);
 
-	double x1[8] = {0}, p1[8 * 8] = { 0 }, h1[8 * 8] = { 0 }, v1[8] = { 0 }, r1[8 * 8] = { 0 };
+	double x1[80] = {0}, p1[80 * 80] = { 0 }, h1[80 * 80] = { 0 }, v1[80] = { 0 }, r1[80 * 80] = { 0 };
 	
 	Map<MatrixXd>(x1, n, 1) = x;
 	Map<MatrixXd>(p1, n, n) = P;

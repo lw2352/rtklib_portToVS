@@ -1300,7 +1300,7 @@ static int ddres(rtk_t *rtk, const nav_t *nav, const obsd_t *obs, double dt, con
                         double a = -e[k + iu[i] * 3];
                         double b = e[k + iu[i] * 3];
                         Hi[k] = a + b;
-                        //求参考星到其他卫星的向量
+                        //求参考星到其他卫星的向量,ekf里面的观测矩阵
                         Hi[k]=-e[k+iu[i]*3]+e[k+iu[j]*3];  /* translation of innovation to position states */
                     }
                     tracemat(4, Hi, 3, 1, 7 ,4);
@@ -1437,6 +1437,7 @@ static int ddres(rtk_t *rtk, const nav_t *nav, const obsd_t *obs, double dt, con
 
     }    /* end of system loop */
     
+#if 0
     //test
     if (H == NULL && P != NULL)//限定为验后残差的ddres
     {
@@ -1459,7 +1460,7 @@ static int ddres(rtk_t *rtk, const nav_t *nav, const obsd_t *obs, double dt, con
             fpcnt++;
         }
     }
-
+#endif
     /* baseline length constraint for moving baseline */
     if (opt->mode==PMODE_MOVEB&&constbl(rtk,x,P,v,H,Ri,Rj,nv)) {
         vflg[nv++]=3<<4;

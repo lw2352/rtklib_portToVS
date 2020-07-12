@@ -53,7 +53,7 @@
 
 //暂时没用到
 extern int test_lambda(int n, int m, const double* a, const double* Q, double* F, double* s);
-extern int test_filter_(const double* x, const double* P, const double* H,
+extern int test_filter(const double* x, const double* P, const double* H,
     const double* v, const double* R, int n, int m,
     double* xp, double* Pp);
 
