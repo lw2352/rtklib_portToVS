@@ -1132,10 +1132,10 @@ static int outecef(unsigned char* buff, const char* s, const sol_t* sol,
     static int ret=1;
     static double x, y, z;//滑动平均后的坐标
     static double x0, y0;//上一个历元的原始坐标
-    static int n=60;//窗口大小
+    static int n=0;//窗口大小
     static int count=1;//计数，动态窗口大小作用时间
     static int status = 0;
-    double dectectValue = 0.01;
+    double dectectValue = 0.005;
     if (opt->timef == 1)
     {
         //两个时刻的坐标差
@@ -1148,12 +1148,17 @@ static int outecef(unsigned char* buff, const char* s, const sol_t* sol,
         if (a > dectectValue || b > dectectValue)
         {
             //变动窗口
-            n = 2;
-            count = 4;
-            status = 1;
+            //n = 2;
+            n = 1;
+            //count = 4;
+            //status = 1;
+        }
+        if (n < 60)
+        {
+            n++;
         }
         //天线移动一段距离后静止
-        if (status==1 && count == 0)
+        /*if (status==1 && count == 0)
         {
             //稍微加大窗口
             n = 4;
@@ -1185,12 +1190,12 @@ static int outecef(unsigned char* buff, const char* s, const sol_t* sol,
             n = 60;
             count = 1;
             status = 5;//等待一段时间
-        }
+        }*/
         x = sol->rr[0], y = sol->rr[1], z = sol->rr[2];
         x0 = x, y0 = y;
         //对结果进行处理，最后一个参数是滑动窗口的大小  
         resultFilter(&x, &y, &z, n);
-        count--;
+        //count--;
         fprintf(stderr, "time:%s, n=%d, count=%d, a=%4.4f, b=%4.4f\n", s, n, count, a, b);
         if (ret)
         {
