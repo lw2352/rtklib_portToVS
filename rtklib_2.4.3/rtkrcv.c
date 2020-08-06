@@ -1616,7 +1616,7 @@ static void accept_sock(int ssock, con_t **con)
 *-----------------------------------------------------------------------------*/
 
 //test lambda
-void test()
+void testLambda()
 {
     double a[3] = { 5.45, 3.1, 2.97 };
     double aConv[9] = { 6.290, 5.978, 0.544, 5.978, 6.292, 2.340, 0.544, 2.340, 6.288};

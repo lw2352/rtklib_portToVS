@@ -6,6 +6,8 @@
 #include "MLAMBDA.h"
 #include <iomanip>
 #include <vector>
+#include<fstream>
+#include<sstream>
 using namespace std;
 using namespace Eigen;
 
@@ -215,4 +217,197 @@ int resultFilter(double* x, double* y, double* z, int n)
 		return 1;
 	}
 }
+
+double transformData(string data)
+{
+	char ret[16];
+	int n = data.size();
+	int i = 0,j=0;
+	while (j <n)
+	{
+		if (data[j] >= '0' && data[j] <= '9' || data[j] == '.')
+		{
+			ret[i] = data[j];
+			i++;
+		}
+		j++;
+	}
+	return atof(ret);
+}
+
+/*static double a = 6378137;//6378140;  //椭球的长半轴
+//static double f = 0.00335281006247;
+//static double b = a * (1 - f);
+static double e2 = 0.0067394967422764;//0.006694384999588;(a * a - b * b) / pow(b,2);
+static double m0 = a * (1 - e2);
+static double m2 = 3.0 / 2 * e2 * m0;
+static double m4 = 5.0 / 4 * e2 * m2;
+static double m6 = 7.0 / 6 * e2 * m4;
+static double m8 = 9.0 / 8 * e2 * m6;
+static double a0 = m0 + m2 / 2 + (3.0 / 8.0) * m4 + (5.0 / 16.0) * m6 + (35.0 / 128.0) * m8;
+static double a2 = m2 / 2 + m4 / 2 + 15.0 / 32 * m6 + 7.0 / 16 * m8;
+static double a4 = m4 / 8 + 3.0 / 16 * m6 + 7.0 / 32 * m8;
+static double a6 = m6 / 32 + m8 / 16;
+static double a8 = m8 / 128;
+static double xx = 0;
+static double yy = 0;
+static double _x = 0;
+static double _y = 0;
+static double BB = 0;
+static double LL = 0;
+static double PI = 3.1415926535897932;  /* pi */
+/*static double F(double Bfi0)
+{
+	double ret = 0.0 - a2 * sin(2 * Bfi0) / 2.0 + a4 * sin(4 * Bfi0) / 4.0 - a6 * sin(6 * Bfi0) / 6.0;
+	return ret;
+}
+static double hcfansuan(double pX)
+{
+	double Bf0 = pX / a0;
+	double Bf1, Bf2;
+	Bf1 = Bf0;
+	Bf2 = (pX - F(Bf1)) / a0;
+	while ((Bf2 - Bf1) > 1.0E-11)
+	{
+		Bf1 = Bf2;
+		Bf2 = (pX - F(Bf1)) / a0;
+	}
+	return Bf1;
+}
+static void GaussNegative(double x, double y, double L0)
+{
+	double Bf, Vf, l, tf, hf2, Nf, Bmiao, Lmiao;
+	int Bdu, Bfen, Ldu, Lfen;
+	y = y - 500000;
+	Bf = hcfansuan(x);
+	Vf = sqrt(1 + e2 / (1 - e2) * cos(Bf) * cos(Bf));
+	tf = tan(Bf);
+	hf2 = e2 / (1 - e2) * cos(Bf) * cos(Bf);
+	Nf = a / sqrt(1 - e2 * sin(Bf) * sin(Bf));
+	BB = (Bf - 0.5 * Vf * Vf * tf * (pow(y / Nf, 2) - 1.0 / 12 * (5 + 3 * tf * tf + hf2 - 9 * hf2 * tf * tf) * pow(y / Nf, 4) + 1.0 / 360 * (61 + 90 * tf * tf + 45 * tf * tf) * pow(y / Nf, 6))) * 180 / PI;
+	Bdu = (int)BB;
+	Bfen = (int)((BB - Bdu) * 60);
+	Bmiao = ((BB - Bdu) * 60 - Bfen) * 60;
+	BB = Bdu + 0.01 * Bfen + 0.0001 * Bmiao;
+	l = 1.0 / cos(Bf) * (y / Nf - 1.0 / 6.0 * (1 + 2 * tf * tf + hf2) * pow(y / Nf, 3) + 1.0 / 120.0 * (5 + 28 * tf * tf + 24 * pow(tf, 4) + 6 * hf2 + 8 * hf2 * tf * tf) * pow(y / Nf, 5)) * 180.0 / PI;
+	LL = L0 + l;
+	Ldu = (int)LL;
+	Lfen = (int)((LL - Ldu) * 60);
+	Lmiao = ((LL - Ldu) * 60 - Lfen) * 60;
+	LL = Ldu + 0.01 * Lfen + 0.0001 * Lmiao;
+}*/
+
+//另一种程序
+	 double a;//'椭球体长半轴
+	 double b;// '椭球体短半轴
+	 double f; //'扁率
+	 double e;// '第一偏心率
+	 double e1; //'第二偏心率
+	 double FE;//'东偏移
+	 double FN;//'北偏移
+	 double L0;//'中央经度
+	 double W0;//'原点纬线
+	 double k0;//'比例因子
+	 double PI = 3.1415926535897932;
+	/**
+	 * 幂函数
+	 * @param e
+	 * @param i
+	 * @return
+	 */
+ double MZ(double e, int i)
+	{
+		return pow(e, i);
+	}
+
+ void init(int TuoqiuCanshu, double CentralMeridian, double OriginLatitude, double EastOffset, double NorthOffset)
+ {
+
+			a = 6378137;
+			b = 6356752.3142;
+		
+
+		f = (a - b) / a;//扁率
+						//e = sqrt(1 - MZ((b / a) ,2));//'第一偏心率
+		e = sqrt(2 * f - MZ(f, 2));//'第一偏心率
+										//eq = sqrt(MZ((a / b) , 2) - 1);//'第二偏心率
+		e1 = e / sqrt(1 - MZ(e, 2));//'第二偏心率
+		L0 = CentralMeridian;//中央经
+		W0 = OriginLatitude;//原点纬线
+		k0 = 1;//'比例因子
+		FE = EastOffset;//东偏移
+		FN = NorthOffset;//北偏移
+	}
+
+	/**
+	 * 高斯投影坐标 转为 经纬度坐标
+	 * @param X 高斯投影坐标X
+	 * @param Y 高斯投影坐标Y
+	 * @return
+	 */
+ double resultP[2];// = new double[2];
+	void GKgetJW(double X, double Y)
+	{
+		//'给出高克投影坐标，转换为经纬度坐标
+		
+		double El1 = (1 - sqrt(1 - MZ(e, 2))) / (1 + sqrt(1 - MZ(e, 2)));
+		double Mf = (Y - FN) / k0;//真实坐标值
+		double Q = Mf / (a * (1 - MZ(e, 2) / 4 - 3 * MZ(e, 4) / 64 - 5 * MZ(e, 6) / 256));//角度
+		double Bf = Q + (3 * El1 / 2 - 27 * MZ(El1, 3) / 32) * sin(2 * Q) + (21 * MZ(El1, 2) / 16 - 55 * MZ(El1, 4) / 32) * sin(4 * Q) + (151 * MZ(El1, 3) / 96) * sin(6 * Q) + 1097 / 512 * MZ(El1, 4) * sin(8 * Q);
+		double Rf = a * (1 - MZ(e, 2)) / sqrt(MZ((1 - MZ((e * sin(Bf)), 2)), 3));
+		double Nf = a / sqrt(1 - MZ((e * sin(Bf)), 2));//卯酉圈曲率半径
+		double Tf = MZ((tan(Bf)), 2);
+		double D = (X - FE) / (k0 * Nf);
+		double Cf = MZ(e1, 2) * MZ((cos(Bf)), 2);
+		double B = Bf - Nf * tan(Bf) / Rf * (MZ(D, 2) / 2 - (5 + 3 * Tf + 10 * Cf - 9 * Tf * Cf - 4 * MZ(Cf, 2) - 9 * MZ(e1, 2)) * MZ(D, 4) / 24 + (61 + 90 * Tf + 45 * MZ(Tf, 2) - 256 * MZ(e1, 2) - 3 * MZ(Cf, 2)) * MZ(D, 6) / 720);
+		double L = L0 * PI / 180 + 1 / cos(Bf) * (D - (1 + 2 * Tf + Cf) * MZ(D, 3) / 6 + (5 - 2 * Cf + 28 * Tf - 3 * MZ(Cf, 2) + 8 * MZ(e1, 2) + 24 * MZ(Tf, 2)) * MZ(D, 5) / 120);
+		double Bangle = B * 180 / PI;
+		double Langle = L * 180 / PI;
+		resultP[0] = Langle;//RW * 180 / Math.PI;
+		resultP[1] = Bangle + W0;//RJ * 180 / Math.PI;
+		//return resultP;
+	}
+
+void test()
+{
+	ifstream fin("C:\\Users\\204\\Desktop\\data.txt");
+	string line_info;
+	ofstream fout("result.txt");
+	init(2, 102.5, 0, 500000, 0);
+	if (fin) // 有该文件
+	{
+		while (getline(fin, line_info)) // line中不包括每行的换行符
+		{
+			string input_result;
+			vector<string> vectorString;
+			stringstream input(line_info);
+			//依次输出到input_result中，并存入vectorString中
+			//cout << "line_info: " << line_info << endl;
+			while (input >> input_result)
+				vectorString.push_back(input_result);//分段保存结果
+			if (vectorString.size() >= 3)
+			{
+				//调用转换函数
+				double x = transformData(vectorString[2]), y = transformData(vectorString[3]);
+				//x = 3137245.1060, y = 498899.0800;
+				//GaussNegative(x, y, 102.5);
+				GKgetJW(y, x);
+				//打印结果
+				cout << setiosflags(ios::fixed) << setprecision(8) << resultP[0]<< ", " << resultP[1] << endl;
+				//输出结果保存到文件
+				fout << setiosflags(ios::fixed) << setprecision(8)  << resultP[0] << ", " << resultP[1] << endl;
+
+			}
+		}
+		fout.close();
+	}
+	else // 没有该文件
+	{
+		cout << "no such file" << endl;
+	}
+}
+
+
+
+
 

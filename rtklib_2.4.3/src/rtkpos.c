@@ -1291,8 +1291,15 @@ static int ddres(rtk_t *rtk, const nav_t *nav, const obsd_t *obs, double dt, con
             
                 //用传入的没有差分的相位/码残差y计算双差残差v，并计算对应的H
                 /* double-differenced measurements from 2 receivers and 2 sats in meters */
-                v[nv]=(y[f+iu[i]*nf*2]-y[f+ir[i]*nf*2])-
-                      (y[f+iu[j]*nf*2]-y[f+ir[j]*nf*2]);           
+                v[nv]=(y[f+iu[i]*nf*2]-y[f+ir[i]*nf*2])-(y[f+iu[j]*nf*2]-y[f+ir[j]*nf*2]);
+                /*double a, bb, c, d,ee,ff;
+                a = y[f + iu[i] * nf * 2];
+                bb = y[f + ir[i] * nf * 2];
+                c = y[f + iu[j] * nf * 2];
+                d = y[f + ir[j] * nf * 2];
+                ee = (a - bb);
+                ff = (c - d);
+                v[nv] = ee - ff;*/
                 /* partial derivatives by rover position, combine unit vectors from two sats */
                 if (H) {
                     for (k=0;k<3;k++) 
@@ -1308,7 +1315,7 @@ static int ddres(rtk_t *rtk, const nav_t *nav, const obsd_t *obs, double dt, con
 
                 if (!code)
                 {
-                    //用相位偏移修正v和H
+                    //用相位双差来修正v和H
                     /* adjust phase residual by double-differenced phase-bias term,
                           IB=look up index by sat&freq */
                     if (opt->ionoopt != IONOOPT_IFLC) {
@@ -1316,7 +1323,9 @@ static int ddres(rtk_t *rtk, const nav_t *nav, const obsd_t *obs, double dt, con
                         int a = IB(sat[i], frq, opt);
                         int b = IB(sat[j], frq, opt);
                         double c = x[a], d = x[b];
-                        v[nv] -= lami * x[IB(sat[i], frq, opt)] - lamj * x[IB(sat[j], frq, opt)];
+                        //修正V和H，由于是单频，所以lami与lamj相等
+                        v[nv] -= lami * (c-d);
+                        //v[nv] -= lami * x[IB(sat[i], frq, opt)] - lamj * x[IB(sat[j], frq, opt)];
                         if (H) {
                             Hi[IB(sat[i], frq, opt)] = lami;
                             Hi[IB(sat[j], frq, opt)] = -lamj;

@@ -1122,8 +1122,7 @@ extern int readsolstat(char *files[], int nfile, solstatbuf_t *statbuf)
     return readsolstatt(files,nfile,time,time,0.0,statbuf);
 }
 /* output solution as the form of x/y/z-ecef ---------------------------------*/
-static int outecef(unsigned char* buff, const char* s, const sol_t* sol,
-    const solopt_t* opt)
+static int outecef(unsigned char* buff, const char* s, const sol_t* sol, const solopt_t* opt)
 {
     const char* sep = opt2sep(opt);
     char* p = (char*)buff;
@@ -1135,7 +1134,7 @@ static int outecef(unsigned char* buff, const char* s, const sol_t* sol,
     static int n=0;//窗口大小
     static int count=1;//计数，动态窗口大小作用时间
     static int status = 0;
-    double dectectValue = 0.005;
+    double dectectValue = 0.005;//灵敏度，单位米
     if (opt->timef == 1)
     {
         //两个时刻的坐标差
@@ -1196,7 +1195,7 @@ static int outecef(unsigned char* buff, const char* s, const sol_t* sol,
         //对结果进行处理，最后一个参数是滑动窗口的大小  
         resultFilter(&x, &y, &z, n);
         //count--;
-        fprintf(stderr, "time:%s, n=%d, count=%d, a=%4.4f, b=%4.4f\n", s, n, count, a, b);
+        trace(1, "time:%s, n=%d, count=%d, a=%4.4f, b=%4.4f\n", s, n, count, a, b);
         if (ret)
         {
             p += sprintf(p, "%s%s%14.4f%s%14.4f%s%14.4f%s%3d%s%3d%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%6.2f%s%6.1f",
@@ -1205,7 +1204,7 @@ static int outecef(unsigned char* buff, const char* s, const sol_t* sol,
                 sep, sqvar(sol->qr[3]), sep, sqvar(sol->qr[4]), sep, sqvar(sol->qr[5]),
                 sep, sol->age, sep, sol->ratio);
             p += sprintf(p, "\n");
-            //fprintf(stderr, "outecef:%s\n", buff);
+            trace(1, "outecef:%s\n", buff);
             int n = p - (char*)buff;
             return n;
         }

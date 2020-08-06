@@ -58,6 +58,7 @@ extern int test_filter(const double* x, const double* P, const double* H,
     double* xp, double* Pp);
 
 extern int resultFilter(double* x, double* y, double* z, int n);
+extern void test();
 
 #ifdef WIN32
 #include <winsock2.h>
