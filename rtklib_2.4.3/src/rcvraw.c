@@ -1,7 +1,7 @@
 /*------------------------------------------------------------------------------
 * rcvraw.c : receiver raw data functions
 *
-*          Copyright (C) 2009-2016 by T.TAKASU, All rights reserved.
+*          Copyright (C) 2009-2018 by T.TAKASU, All rights reserved.
 *          Copyright (C) 2014 by T.SUZUKI, All rights reserved.
 *
 * references :
@@ -14,7 +14,7 @@
 *     [4] Quasi-Zenith Satellite System Navigation Service Interface
 *         Specification for QZSS (IS-QZSS) V.1.5, March 27, 2014
 *     [5] European GNSS (Galileo) Open Service Signal In Space Interface Control
-*         Document, Issue 1.2, November 2015
+*         Document, Issue 1.3, December, 2016
 *
 * version : $Revision: 1.1 $ $Date: 2008/07/17 21:48:06 $
 * history : 2009/04/10 1.0  new
@@ -34,6 +34,9 @@
 *           2016/01/28 1.12 add decode_gal_inav() for galileo I/NAV
 *           2016/07/04 1.13 support CMR/CMR+
 *           2017/05/26 1.14 support TERSUS
+*           2018/10/10 1.15 update reference [5]
+*                           add set of eph->code/flag for galileo and beidou
+*           2018/12/05 1.16 add test of galileo i/nav word type 5
 *-----------------------------------------------------------------------------*/
 #include "rtklib.h"
 #include <stdint.h>
@@ -158,9 +161,9 @@ extern int decode_gal_inav(const unsigned char *buff, eph_t *eph)
     e1b_dvs    =getbitu(buff,i, 1);
     
     /* test word types */
-    if (type[0]!=0||type[1]!=1||type[2]!=2||type[3]!=3||type[4]!=4) {
-        trace(3,"decode_gal_inav error: type=%d %d %d %d %d\n",type[0],type[1],
-              type[2],type[3],type[4]);
+    if (type[0]!=0||type[1]!=1||type[2]!=2||type[3]!=3||type[4]!=4||type[5]!=5) {
+        trace(3,"decode_gal_inav error: type=%d %d %d %d %d %d\n",type[0],
+              type[1],type[2],type[3],type[4],type[5]);
         return 0;
     }
     /* test word type 0 time field */
@@ -188,8 +191,7 @@ extern int decode_gal_inav(const unsigned char *buff, eph_t *eph)
     eph->toe=gst2time(week,eph->toes);
     eph->toc=gst2time(week,toc);
     eph->week=week+1024; /* gal-week = gst-week + 1024 */
-    eph->code=1;         /* data source = I/NAV E1B */
-    
+    eph->code =(1<<0)|(1<<9); /* data source = i/nav e1b, af0-2,toc,sisa for e5b-e1 */
     return 1;
 }
 /* decode BeiDou D1 ephemeris --------------------------------------------------
@@ -269,6 +271,8 @@ extern int decode_bds_d1(const unsigned char *buff, eph_t *eph)
     else if (eph->toes<sow1-302400.0) eph->week--;
     eph->toe=bdt2gpst(bdt2time(eph->week,eph->toes)); /* bdt -> gpst */
     eph->toc=bdt2gpst(bdt2time(eph->week,toc_bds));   /* bdt -> gpst */
+    eph->code=0; /* data source = unknown */
+    eph->flag=1; /* nav type = IGSO/MEO */
     return 1;
 }
 /* decode BeiDou D2 ephemeris --------------------------------------------------
@@ -392,6 +396,8 @@ extern int decode_bds_d2(const unsigned char *buff, eph_t *eph)
     else if (eph->toes<sow1-302400.0) eph->week--;
     eph->toe=bdt2gpst(bdt2time(eph->week,eph->toes)); /* bdt -> gpst */
     eph->toc=bdt2gpst(bdt2time(eph->week,toc_bds));   /* bdt -> gpst */
+    eph->code=0; /* data source = unknown */
+    eph->flag=2; /* nav type = GEO */
     return 1;
 }
 /* test hamming code of glonass ephemeris string -------------------------------
@@ -990,9 +996,9 @@ extern int input_raw(raw_t *raw, int format, unsigned char data)
     
     switch (format) {
         case STRFMT_OEM4 : return input_oem4 (raw,data);
-        case STRFMT_OEM3 : return input_oem3 (raw,data);
+        case STRFMT_CNAV : return input_cnav (raw,data);
         case STRFMT_UBX  : return input_ubx  (raw,data);
-        case STRFMT_SS2  : return input_ss2  (raw,data);
+        case STRFMT_SBP  : return input_sbp  (raw,data);
         case STRFMT_CRES : return input_cres (raw,data);
         case STRFMT_STQ  : return input_stq  (raw,data);
         case STRFMT_GW10 : return input_gw10 (raw,data);
@@ -1020,9 +1026,9 @@ extern int input_rawf(raw_t *raw, int format, FILE *fp)
     
     switch (format) {
         case STRFMT_OEM4 : return input_oem4f (raw,fp);
-        case STRFMT_OEM3 : return input_oem3f (raw,fp);
+        case STRFMT_CNAV : return input_cnavf (raw,fp);
         case STRFMT_UBX  : return input_ubxf  (raw,fp);
-        case STRFMT_SS2  : return input_ss2f  (raw,fp);
+        case STRFMT_SBP  : return input_sbpf  (raw,fp);
         case STRFMT_CRES : return input_cresf (raw,fp);
         case STRFMT_STQ  : return input_stqf  (raw,fp);
         case STRFMT_GW10 : return input_gw10f (raw,fp);

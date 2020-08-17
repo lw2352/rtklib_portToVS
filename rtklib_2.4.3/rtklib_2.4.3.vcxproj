@@ -43,7 +43,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -67,9 +67,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.c" />
+    <ClCompile Include="MLAMBDA\ARLambda.cpp" />
+    <ClCompile Include="MLAMBDA\MathUtils.cpp" />
+    <ClCompile Include="MLAMBDA\MLAMBDA.cpp" />
+    <ClCompile Include="MLAMBDA\pch.cpp" />
     <ClCompile Include="rtkrcv.c" />
     <ClCompile Include="src\binex.c" />
     <ClCompile Include="src\cmr.c" />
+    <ClCompile Include="src\comnav.c" />
     <ClCompile Include="src\convgpx.c" />
     <ClCompile Include="src\convkml.c" />
     <ClCompile Include="src\convrnx.c" />
@@ -108,9 +113,9 @@
     <ClCompile Include="src\septentrio.c" />
     <ClCompile Include="src\skytraq.c" />
     <ClCompile Include="src\solution.c" />
-    <ClCompile Include="src\ss2.c" />
     <ClCompile Include="src\stream.c" />
     <ClCompile Include="src\streamsvr.c" />
+    <ClCompile Include="src\swiftnav.c" />
     <ClCompile Include="src\tersus.c" />
     <ClCompile Include="src\tides.c" />
     <ClCompile Include="src\tle.c" />
@@ -118,17 +123,24 @@
     <ClCompile Include="vt.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="MLAMBDA\ARLambda.h" />
+    <ClInclude Include="MLAMBDA\MathUtils.h" />
+    <ClInclude Include="MLAMBDA\MLAMBDA.h" />
+    <ClInclude Include="MLAMBDA\pch.h" />
     <ClInclude Include="src\rtklib.h" />
     <ClInclude Include="vt.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="data\1.obs" />
+    <None Include="data\2.nav" />
+    <None Include="data\2.obs" />
+    <None Include="data\3.obs" />
+    <None Include="data\4.nav" />
+    <None Include="data\4.obs" />
     <None Include="rtk.conf" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="data\1.txt" />
-    <Text Include="data\2.txt" />
-    <Text Include="data\3.txt" />
-    <Text Include="data\4.txt" />
+    <Text Include="CMakeLists.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

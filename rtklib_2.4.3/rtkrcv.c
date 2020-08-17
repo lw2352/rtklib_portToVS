@@ -64,7 +64,7 @@
 #define OPTSFILE    "../rtklib_2.4.3/rtk.conf"       /* default config file */
 #define NAVIFILE    "rtkrcv.nav"        /* navigation save file */
 #define STATFILE    "rtkrcv_%Y%m%d%h%M.stat"  /* solution status file */
-#define TRACEFILE   "rtkrcv_%Y%m%d%h%M.trace" /* debug trace file */
+#define TRACEFILE   "" /* debug trace file rtkrcv_%Y%m%d%h%M.trace*/
 #define INTKEEPALIVE 1000               /* keep alive interval (ms) */
 
 #define ESC_CLEAR   "\033[H\033[2J"     /* ansi/vt100 escape: erase screen */
@@ -1616,7 +1616,7 @@ static void accept_sock(int ssock, con_t **con)
 *-----------------------------------------------------------------------------*/
 
 //test lambda
-void test()
+void testLambda()
 {
     double a[3] = { 5.45, 3.1, 2.97 };
     double aConv[9] = { 6.290, 5.978, 0.544, 5.978, 6.292, 2.340, 0.544, 2.340, 6.288};
@@ -1633,13 +1633,13 @@ void test()
     //test_lambda(n, m, a, aConv, b, s);
 }
 
-int main(int argc, char **argv)
+int rtkrcv()
 {
     
     con_t *con[MAXCON]={0};
-    int i,start=1,port=0,outstat=0,trace=2,sock=0;
+    int i,start=1,port=0,outstat=0,trace=1,sock=0;
     char *dev="",file[MAXSTR]="";
-    
+#if 0
     for (i=1;i<argc;i++) {
         if      (!strcmp(argv[i],"-s")) start=1;
         else if (!strcmp(argv[i],"-p")&&i+1<argc) port=atoi(argv[++i]);
@@ -1652,12 +1652,14 @@ int main(int argc, char **argv)
         else if (!strcmp(argv[i],"-sta")&&i+1<argc) strcpy(sta_name,argv[++i]);
         else printusage();
     }
+#endif
     if (trace>0) {
         traceopen(TRACEFILE);
         tracelevel(trace);
     }
     //my test
     //test();
+    //return 0;
     /* initialize rtk server and monitor port */
     rtksvrinit(&svr);
     strinit(&moni);

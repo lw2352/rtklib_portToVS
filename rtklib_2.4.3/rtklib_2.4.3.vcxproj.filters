@@ -10,7 +10,10 @@
       <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
     <Filter Include="data">
-      <UniqueIdentifier>{f3c32848-62de-4bc3-b07f-2b1987d60e83}</UniqueIdentifier>
+      <UniqueIdentifier>{aa9358c0-950c-460a-8793-f0bce33a6ee4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MLAMBDA">
+      <UniqueIdentifier>{bf379537-7a67-457e-8d7b-54f59bc54b80}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -149,9 +152,6 @@
     <ClCompile Include="src\skytraq.c">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\ss2.c">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\tersus.c">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -164,6 +164,24 @@
     <ClCompile Include="rtkrcv.c">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\comnav.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\swiftnav.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MLAMBDA\ARLambda.cpp">
+      <Filter>MLAMBDA</Filter>
+    </ClCompile>
+    <ClCompile Include="MLAMBDA\MathUtils.cpp">
+      <Filter>MLAMBDA</Filter>
+    </ClCompile>
+    <ClCompile Include="MLAMBDA\MLAMBDA.cpp">
+      <Filter>MLAMBDA</Filter>
+    </ClCompile>
+    <ClCompile Include="MLAMBDA\pch.cpp">
+      <Filter>MLAMBDA</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\rtklib.h">
@@ -172,24 +190,45 @@
     <ClInclude Include="vt.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="MLAMBDA\ARLambda.h">
+      <Filter>MLAMBDA</Filter>
+    </ClInclude>
+    <ClInclude Include="MLAMBDA\MathUtils.h">
+      <Filter>MLAMBDA</Filter>
+    </ClInclude>
+    <ClInclude Include="MLAMBDA\MLAMBDA.h">
+      <Filter>MLAMBDA</Filter>
+    </ClInclude>
+    <ClInclude Include="MLAMBDA\pch.h">
+      <Filter>MLAMBDA</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <None Include="data\1.obs">
+      <Filter>data</Filter>
+    </None>
+    <None Include="data\2.nav">
+      <Filter>data</Filter>
+    </None>
+    <None Include="data\2.obs">
+      <Filter>data</Filter>
+    </None>
+    <None Include="data\3.obs">
+      <Filter>data</Filter>
+    </None>
+    <None Include="data\4.nav">
+      <Filter>data</Filter>
+    </None>
+    <None Include="data\4.obs">
+      <Filter>data</Filter>
+    </None>
     <None Include="rtk.conf">
-      <Filter>源文件</Filter>
+      <Filter>头文件</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="data\1.txt">
-      <Filter>data</Filter>
-    </Text>
-    <Text Include="data\2.txt">
-      <Filter>data</Filter>
-    </Text>
-    <Text Include="data\3.txt">
-      <Filter>data</Filter>
-    </Text>
-    <Text Include="data\4.txt">
-      <Filter>data</Filter>
+    <Text Include="CMakeLists.txt">
+      <Filter>源文件</Filter>
     </Text>
   </ItemGroup>
 </Project>
