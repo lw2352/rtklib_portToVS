@@ -9,7 +9,7 @@
 #ifndef VT_H
 #define VT_H
 //#include <termios.h>
-#include "src\rtklib.h"
+#include "src/rtklib.h"
 
 #define MAXBUFF     4096                /* size of line buffer */
 #define MAXHIST     256                 /* size of history buffer */

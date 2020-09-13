@@ -1,4 +1,4 @@
-#include "src\rtklib.h"
+#include "src/rtklib.h"
 
 #define TRACEFILE   ""
 #define OPTSDIR     "."                 /* default config directory */
@@ -99,11 +99,12 @@ static opt_t rcvopts[] = {
 
 void main()
 {
+    int level = 2;
 #if 1
     //test();
-	rtkrcv();
+	rtkrcv(level);
 #else
-    int level = 1;
+    
 	traceopen(TRACEFILE);
 	tracelevel(level);
 	char file[MAXSTR] = "";

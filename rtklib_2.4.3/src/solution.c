@@ -1134,7 +1134,7 @@ static int outecef(unsigned char* buff, const char* s, const sol_t* sol, const s
     static int n=0;//窗口大小
     static int count=1;//计数，动态窗口大小作用时间
     static int status = 0;
-    double dectectValue = 0.005;//灵敏度，单位米
+    double dectectValue = 0.01;//灵敏度，单位米
     if (opt->timef == 1)
     {
         //两个时刻的坐标差
@@ -1146,56 +1146,19 @@ static int outecef(unsigned char* buff, const char* s, const sol_t* sol, const s
         //天线发生移动         
         if (a > dectectValue || b > dectectValue)
         {
-            //变动窗口
-            //n = 2;
             n = 1;
-            //count = 4;
-            //status = 1;
         }
         if (n < 60)
         {
             n++;
         }
-        //天线移动一段距离后静止
-        /*if (status==1 && count == 0)
-        {
-            //稍微加大窗口
-            n = 4;
-            count = 6;
-            status = 2;
-        }
-        //检验是否长时间稳定，再扩大窗口
-        if (status == 2 && count == 0)
-        {
-            n = 10;
-            count = 20;
-            status = 3;
-        }
-        if (status == 3 && count == 0)
-        {
-            n = 20;
-            count = 30;
-            status = 4;
-        }
-        if (status == 4 && count == 0)
-        {
-            n = 40;
-            count = 30;
-            status = 5;
-        }
-        //恢复原状态
-        if (status == 5 && count == 0)
-        {
-            n = 60;
-            count = 1;
-            status = 5;//等待一段时间
-        }*/
+        
         x = sol->rr[0], y = sol->rr[1], z = sol->rr[2];
         x0 = x, y0 = y;
         //对结果进行处理，最后一个参数是滑动窗口的大小  
         resultFilter(&x, &y, &z, n);
-        //count--;
-        trace(1, "time:%s, n=%d, count=%d, a=%4.4f, b=%4.4f\n", s, n, count, a, b);
+
+        fprintf(stderr, "time:%s, n=%d, a=%4.4f, b=%4.4f\n", s, n, a, b);
         if (ret)
         {
             p += sprintf(p, "%s%s%14.4f%s%14.4f%s%14.4f%s%3d%s%3d%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%6.2f%s%6.1f",
@@ -1204,7 +1167,7 @@ static int outecef(unsigned char* buff, const char* s, const sol_t* sol, const s
                 sep, sqvar(sol->qr[3]), sep, sqvar(sol->qr[4]), sep, sqvar(sol->qr[5]),
                 sep, sol->age, sep, sol->ratio);
             p += sprintf(p, "\n");
-            trace(1, "outecef:%s\n", buff);
+            fprintf(stderr, "outecef:%s\n", buff);
             int n = p - (char*)buff;
             return n;
         }
@@ -1217,6 +1180,7 @@ static int outecef(unsigned char* buff, const char* s, const sol_t* sol, const s
                 sep, sqvar(sol->qr[3]), sep, sqvar(sol->qr[4]), sep, sqvar(sol->qr[5]),
                 sep, sol->age, sep, sol->ratio);
             p += sprintf(p, "\n");
+            trace(1, "outecef:%s\n", buff);
             int n = p - (char*)buff;
             return n;
         }
