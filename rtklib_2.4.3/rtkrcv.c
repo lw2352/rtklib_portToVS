@@ -49,7 +49,7 @@
 //#include <arpa/inet.h>
 //#include <netdb.h>
 #include <errno.h>
-#include "src\rtklib.h"
+#include "src/rtklib.h"
 #include "vt.h"
 
 
@@ -1633,11 +1633,11 @@ void testLambda()
     //test_lambda(n, m, a, aConv, b, s);
 }
 
-int rtkrcv()
+int rtkrcv(int trace)
 {
     
     con_t *con[MAXCON]={0};
-    int i,start=1,port=0,outstat=0,trace=1,sock=0;
+    int i,start=1,port=0,outstat=0,sock=0;
     char *dev="",file[MAXSTR]="";
 #if 0
     for (i=1;i<argc;i++) {
