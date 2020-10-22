@@ -99,7 +99,7 @@ int test_lambda(int n, int m, double* a, double* Q, double* F, double* s)
 * args   : double *x        I   states vector (n x 1)
 *          double *P        I   covariance matrix of states (n x n)
 *          double *H        I   transpose of design matrix (n x m)
-*          double *v        I   innovation (measurement - model) (m x 1)
+*          double *v        I   innovation (measurement - model) (m x 1)//新息
 *          double *R        I   covariance matrix of measurement error (m x m)
 *          int    n,m       I   number of states and measurements
 *          double *xp       O   states vector after update (n x 1)
@@ -112,6 +112,9 @@ int test_filter(double* x_in, double* P_in, double* H_in,
  double* v_in, double* R_in, int n, int m,
 	double* xp_out, double* Pp_out)
 {
+	/* m是参与解算的卫星颗数
+	* x=(r,v,B),n是x矩阵的大小，n=3+3+8=14;
+	*/
 	if (x_in[0] == 0.0)
 		return -1;
 	VectorXd x= Map<Matrix<double, Dynamic, Dynamic, ColMajor> >(x_in, n, 1);
@@ -119,7 +122,7 @@ int test_filter(double* x_in, double* P_in, double* H_in,
 	MatrixXd H = Map<Matrix<double, Dynamic, Dynamic, ColMajor> >(H_in, n, m);
 	VectorXd v = Map<Matrix<double, Dynamic, Dynamic, ColMajor> >(v_in, m, 1);
 	MatrixXd R = Map<Matrix<double, Dynamic, Dynamic, ColMajor> >(R_in, m, m);
-
+//test
 	double x1[80] = {0}, p1[80 * 80] = { 0 }, h1[80 * 80] = { 0 }, v1[80] = { 0 }, r1[80 * 80] = { 0 };
 	
 	Map<MatrixXd>(x1, n, 1) = x;
@@ -127,11 +130,13 @@ int test_filter(double* x_in, double* P_in, double* H_in,
 	Map<MatrixXd>(h1, n, m) = H;
 	Map<MatrixXd>(v1, m, 1) = v;
 	Map<MatrixXd>(r1, m, m) = R;
-	
+//test end	
 	MatrixXd K = P * H * ((H.transpose() * P * H + R).inverse());
 	VectorXd xp = x + K * v;
 	Eigen::MatrixXd I = Eigen::MatrixXd::Identity(x.size(), x.size());
 	MatrixXd Pp = (I - K * H.transpose()) * P;
+	//https://zhuanlan.zhihu.com/p/159246989 计算机处理时可能由于截断误差导致Pp矩阵不对称。使用等效的计算公式Pp=(I-KH')P(I-KH')'+KRK' 更稳健
+	//MatrixXd Pp = (I - K * H.transpose()) * P*(I - K * H.transpose()).transpose()+K*R*K.transpose();
 
 	Map<MatrixXd>(xp_out, n, 1) = xp;
 	Map<MatrixXd>(Pp_out, n, n) = Pp;

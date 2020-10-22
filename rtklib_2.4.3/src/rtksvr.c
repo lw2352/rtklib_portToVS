@@ -152,8 +152,9 @@ static void updatesvr(rtksvr_t *svr, int ret, obs_t *obs, nav_t *nav, int sat,
     if (ret==1) { /* observation data */
         if (iobs<MAXOBSBUF) {
             for (i=0;i<obs->n;i++) {
-                if (svr->rtk.opt.exsats[obs->data[i].sat-1]==1||
-                    !(satsys(obs->data[i].sat,NULL)&svr->rtk.opt.navsys)) continue;
+                if (svr->rtk.opt.exsats[obs->data[i].sat-1]==1||//ÅÅ³ýÌØ¶¨ÎÀÐÇ
+                    !(satsys(obs->data[i].sat,NULL)&svr->rtk.opt.navsys)) 
+                    continue;
                 svr->obs[index][iobs].data[n]=obs->data[i];
                 svr->obs[index][iobs].data[n++].rcv=index+1;
             }

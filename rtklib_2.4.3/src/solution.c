@@ -1127,8 +1127,9 @@ static int outecef(unsigned char* buff, const char* s, const sol_t* sol, const s
     const char* sep = opt2sep(opt);
     char* p = (char*)buff;
 
-#if 1
+#if 0
     static int ret=1;
+    static int windowSize = 60;
     static double x, y, z;//滑动平均后的坐标
     static double x0, y0;//上一个历元的原始坐标
     static int n=0;//窗口大小
@@ -1138,8 +1139,9 @@ static int outecef(unsigned char* buff, const char* s, const sol_t* sol, const s
     if (opt->timef == 1)
     {
         //两个时刻的坐标差
-        double a = sol->rr[0] - x0;
-        double b = sol->rr[1] - y0;
+        //发生周跳时，定位结果会跳变
+        double a = sol->rr[0] - x;
+        double b = sol->rr[1] - y;
         a = fabs(a);
         b = fabs(b);
 
@@ -1147,8 +1149,9 @@ static int outecef(unsigned char* buff, const char* s, const sol_t* sol, const s
         if (a > dectectValue || b > dectectValue)
         {
             n = 1;
+            //fprintf(stderr, "time:%s,detect move!\n",s);
         }
-        if (n < 60)
+        else if (n < windowSize)
         {
             n++;
         }
@@ -1158,7 +1161,7 @@ static int outecef(unsigned char* buff, const char* s, const sol_t* sol, const s
         //对结果进行处理，最后一个参数是滑动窗口的大小  
         resultFilter(&x, &y, &z, n);
 
-        fprintf(stderr, "time:%s, n=%d, a=%4.4f, b=%4.4f\n", s, n, a, b);
+        //fprintf(stderr, "time:%s, n=%d, a=%4.4f, b=%4.4f\n", s, n, a, b);
         if (ret)
         {
             p += sprintf(p, "%s%s%14.4f%s%14.4f%s%14.4f%s%3d%s%3d%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%8.4f%s%6.2f%s%6.1f",
@@ -1167,7 +1170,7 @@ static int outecef(unsigned char* buff, const char* s, const sol_t* sol, const s
                 sep, sqvar(sol->qr[3]), sep, sqvar(sol->qr[4]), sep, sqvar(sol->qr[5]),
                 sep, sol->age, sep, sol->ratio);
             p += sprintf(p, "\n");
-            fprintf(stderr, "outecef:%s\n", buff);
+            //fprintf(stderr, "outecef:%s\n", buff);
             int n = p - (char*)buff;
             return n;
         }

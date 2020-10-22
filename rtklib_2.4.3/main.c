@@ -116,7 +116,7 @@ void main()
 					{"D:\\Documents\\Visual Studio 2019\\rtklib_portToVS\\rtklib_2.4.3\\data\\8.obs"},
 					{"D:\\Documents\\Visual Studio 2019\\rtklib_portToVS\\rtklib_2.4.3\\data\\8.nav"},
 	};
-	char* outfile="D:\\Documents\\Visual Studio 2019\\rtklib_portToVS\\rtklib_2.4.3\\data\\8.pos";
+	char* outfile="D:\\Documents\\Visual Studio 2019\\rtklib_portToVS\\rtklib_2.4.3\\data\\9.pos";
 	
 	//prcopt.mode= PMODE_STATIC;
 	//prcopt.navsys = SYS_GPS;
