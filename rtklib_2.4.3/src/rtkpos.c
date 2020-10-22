@@ -408,7 +408,7 @@ static double varerr(int sat, int sys, double el, double snr_rover, double snr_b
     double snr_max = opt->err[5];
     double d = CLIGHT * opt->sclkstab * dt;
     double fact = 1.0;
-    double sinel = sin(el);
+    double sinel = sin(el);//el是仰角
     int i, nf = NF(opt), frq, code;
 
     frq=f%nf;code=f<nf?0:1;
@@ -664,6 +664,19 @@ static void udrcvbias(rtk_t *rtk, double tt)
         }
     }
 }
+
+//delete sat
+static void deleteSat(rtk_t* rtk, int sat)
+{
+    static int i = 0;
+    i++;
+    if (i > 3)
+    {
+        i = 0;
+        rtk->opt.exsats[sat - 1] = 1;
+        fprintf(stderr, "\nREMOVE sat= %d!\n", sat);
+    }
+}
 /* detect cycle slip by LLI --------------------------------------------------*/
 static void detslp_ll(rtk_t *rtk, const obsd_t *obs, int i, int rcv)
 {
@@ -687,6 +700,8 @@ static void detslp_ll(rtk_t *rtk, const obsd_t *obs, int i, int rcv)
             if (obs[i].LLI[f]&1) {
                 errmsg(rtk,"slip detected forward (sat=%2d rcv=%d F=%d LLI=%x)\n",
                        sat,rcv,f+1,obs[i].LLI[f]);
+                //rtk->opt.exsats[sat - 1] = 1;
+                //fprintf(stderr, "REMOVE sat= %d!\n", sat);
             }
             slip=obs[i].LLI[f];
         }
@@ -694,6 +709,8 @@ static void detslp_ll(rtk_t *rtk, const obsd_t *obs, int i, int rcv)
             if (LLI&1) {
                 errmsg(rtk,"slip detected backward (sat=%2d rcv=%d F=%d LLI=%x)\n",
                        sat,rcv,f+1,LLI);
+                //rtk->opt.exsats[sat - 1] = 1;
+                //fprintf(stderr, "REMOVE sat= %d!\n", sat);
             }
             slip=LLI;
         }
@@ -701,6 +718,9 @@ static void detslp_ll(rtk_t *rtk, const obsd_t *obs, int i, int rcv)
         if (((LLI&2)&&!(obs[i].LLI[f]&2))||(!(LLI&2)&&(obs[i].LLI[f]&2))) {
             errmsg(rtk,"slip detected half-cyc (sat=%2d rcv=%d F=%d LLI=%x->%x)\n",
                    sat,rcv,f+1,LLI,obs[i].LLI[f]);
+            //rtk->opt.exsats[sat - 1] = 1;
+            //fprintf(stderr, "\nREMOVE sat= %d!\n",sat);
+            //deleteSat(rtk, sat);
             slip|=1;
         }
         /* save current LLI */
@@ -712,6 +732,7 @@ static void detslp_ll(rtk_t *rtk, const obsd_t *obs, int i, int rcv)
         rtk->ssat[sat-1].half[f]=(obs[i].LLI[f]&2)?0:1;
     }
 }
+
 /* detect cycle slip by L1-L2 geometry free phase jump -----------------------*/
 static void detslp_gf_L1L2(rtk_t *rtk, const obsd_t *obs, int i, int j,
                            const nav_t *nav)
@@ -1410,7 +1431,7 @@ static int ddres(rtk_t *rtk, const nav_t *nav, const obsd_t *obs, double dt, con
                             sat[i],sat[j],code?"P":"L",frq+1,v[nv]);
                     continue;
                 }
-                //计算单差的测量误差协方差Ri、Rj
+                //计算单差的测量误差协方差Ri、Rj，第三个参数是仰角
                 /* single-differenced measurement error variances */
                 Ri[nv] = varerr(sat[i], sysi, azel[1+iu[i]*2], 
                                 0.25 * rtk->ssat[sat[i]-1].snr_rover[frq],
@@ -1851,7 +1872,8 @@ static int manage_amb_LAMBDA(rtk_t *rtk, double *bias, double *xa, const int *sa
     if (rtk->sol.prev_ratio2<rtk->sol.thres&&rtk->nb_ar>=rtk->opt.mindropsats) {
         /* find and count sats used last time for AR */
         for (f=0;f<nf;f++) for (i=0;i<ns;i++) 
-            if (rtk->ssat[sat[i]-1].vsat[f] && rtk->ssat[sat[i]-1].lock[f]>=0 && rtk->ssat[sat[i]-1].azel[1]>=rtk->opt.elmin) {
+            if (rtk->ssat[sat[i]-1].vsat[f] && rtk->ssat[sat[i]-1].lock[f]>=0 && rtk->ssat[sat[i]-1].azel[1]>=rtk->opt.elmin)//todo:更新到最新的代码，此处删掉了后面几个条件
+            {
                 arsats[ar++]=i;
             }
         if (rtk->excsat<ar) {
