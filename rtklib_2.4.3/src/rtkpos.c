@@ -547,7 +547,6 @@ static void udpos(rtk_t *rtk, double tt)
     }
     /* state transition of position/velocity/acceleration */
     F=eye(nx); P=mat(nx,nx); FP=mat(nx,nx); x=mat(nx,1); xp=mat(nx,1);
-    
     for (i=0;i<6;i++) {
         F[i+(i+3)*nx]=tt;
     }
@@ -564,11 +563,33 @@ static void udpos(rtk_t *rtk, double tt)
             P[i+j*nx]=rtk->P[ix[i]+ix[j]*rtk->nx];
         }
     }
-    /* x=F*x, P=F*P*F+Q */
+    /* x=F*x, P=F*P*F'+Q *///卡尔曼的时间更新公式
+    double* P1 = mat(nx, nx);
+    int ret;
+    matcpy(P1, P, nx, nx);
+    /*fprintf(stderr, "P1:\n");
+    ret=memcmp(P1,P,nx*nx);
+    matfprint(P, nx, nx, 4, 2, stdout);
     matmul("NN",nx,1,nx,1.0,F,x,0.0,xp);
     matmul("NN",nx,nx,nx,1.0,F,P,0.0,FP);
     matmul("NT",nx,nx,nx,1.0,FP,F,0.0,P);
-    
+    fprintf(stderr, "xp:\n");
+    matfprint(xp, nx, 1, 4, 2, stdout);
+    fprintf(stderr, "P:\n");
+    matfprint(P, nx, nx, 4, 2, stdout);*/
+    //test
+    double* Pp = mat(nx, nx);
+    double* Xp = mat(nx, 1);
+    test_udPos(nx,F,x,P1,Xp,Pp);
+    /*fprintf(stderr, "Xp:\n");
+    matfprint(Xp, nx, 1, 4, 2, stdout);
+    ret = memcmp(Xp, xp, nx * 1);
+    fprintf(stderr, "Pp:\n");
+    matfprint(Pp, nx, nx, 4, 2, stdout);
+    ret = memcmp(Pp, P, nx * nx);*/
+    matcpy(P,Pp,nx,nx);
+    matcpy(xp, Xp, nx, 1);
+    //end of test
     for (i=0;i<nx;i++) {
         rtk->x[ix[i]]=xp[i];
         for (j=0;j<nx;j++) {
@@ -668,11 +689,11 @@ static void udrcvbias(rtk_t *rtk, double tt)
 //delete sat
 static void deleteSat(rtk_t* rtk, int sat)
 {
-    static int i = 0;
-    i++;
-    if (i > 3)
+    static int count[MAXSAT] = { 0 };
+    count[sat - 1]++;
+    if (count[sat - 1] > 3)//slip超过3次就排除
     {
-        i = 0;
+        count[sat - 1] = -1;
         rtk->opt.exsats[sat - 1] = 1;
         fprintf(stderr, "\nREMOVE sat= %d!\n", sat);
     }
@@ -702,6 +723,7 @@ static void detslp_ll(rtk_t *rtk, const obsd_t *obs, int i, int rcv)
                        sat,rcv,f+1,obs[i].LLI[f]);
                 //rtk->opt.exsats[sat - 1] = 1;
                 //fprintf(stderr, "REMOVE sat= %d!\n", sat);
+                deleteSat(rtk, sat);
             }
             slip=obs[i].LLI[f];
         }
@@ -711,6 +733,7 @@ static void detslp_ll(rtk_t *rtk, const obsd_t *obs, int i, int rcv)
                        sat,rcv,f+1,LLI);
                 //rtk->opt.exsats[sat - 1] = 1;
                 //fprintf(stderr, "REMOVE sat= %d!\n", sat);
+                deleteSat(rtk, sat);
             }
             slip=LLI;
         }
@@ -720,7 +743,7 @@ static void detslp_ll(rtk_t *rtk, const obsd_t *obs, int i, int rcv)
                    sat,rcv,f+1,LLI,obs[i].LLI[f]);
             //rtk->opt.exsats[sat - 1] = 1;
             //fprintf(stderr, "\nREMOVE sat= %d!\n",sat);
-            //deleteSat(rtk, sat);
+            deleteSat(rtk, sat);
             slip|=1;
         }
         /* save current LLI */
@@ -781,28 +804,31 @@ static void detslp_dop(rtk_t *rtk, const obsd_t *obs, int i, int rcv,
 {
     /* detection with doppler disabled because of clock-jump issue (v.2.3.0) */
 #if 0
-    int f,sat=obs[i].sat;
+    int f,sat=obs[i].sat,cj;
     double tt,dph,dpt,lam,thres;
     
     trace(4,"detslp_dop: i=%d rcv=%d\n",i,rcv);
     
-    for (f=0;f<rtk->opt.nf;f++) {
-        if (obs[i].L[f]==0.0||obs[i].D[f]==0.0||rtk->ph[rcv-1][sat-1][f]==0.0) {
+    for (f=0;f<rtk->opt.nf;f++) 
+    {
+        if (obs[i].L[f]==0.0||obs[i].D[f]==0.0||rtk->ssat[sat - 1].ph[rcv-1][f]==0.0) {
             continue;
         }
-        if (fabs(tt=timediff(obs[i].time,rtk->pt[rcv-1][sat-1][f]))<DTTOL) continue;
-        if ((lam=nav->lam[sat-1][f])<=0.0) continue;
-        
-        /* cycle slip threshold (cycle) */
-        thres=MAXACC*tt*tt/2.0/lam+rtk->opt.err[4]*fabs(tt)*4.0;
+        if (fabs(tt=timediff(obs[i].time,rtk->ssat[sat - 1].pt[rcv-1][f]))<DTTOL) continue;
+        if ((lam=nav->lam[sat-1][f])<=0.0) continue;       
         
         /* phase difference and doppler x time (cycle) */
-        dph=obs[i].L[f]-rtk->ph[rcv-1][sat-1][f];
+        dph=obs[i].L[f]-rtk->ssat[sat - 1].ph[rcv-1][f];
         dpt=-obs[i].D[f]*tt;
         
-        if (fabs(dph-dpt)<=thres) continue;
+        cj = floor(fabs(dph * lam / CLIGHT) * 1000 + 0.5);
+        if (cj != 0) continue;
+        /* cycle slip threshold (cycle) */
+        thres=(!rtk->opt.dynamics)?1.5:MAXACC*tt/2.0/lam+rtk->opt.err[4]*4.0;//hz
+
+        if (fabs(dph/tt-dpt)<=thres) continue;
         
-        rtk->slip[sat-1][f]|=1;
+        rtk->ssat[sat - 1].slip[f] |= 1;
         
         errmsg(rtk,"slip detected (sat=%2d rcv=%d L%d=%.3f %.3f thres=%.3f)\n",
                sat,rcv,f+1,dph,dpt,thres);

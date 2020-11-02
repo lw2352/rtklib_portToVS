@@ -59,6 +59,7 @@ extern int test_filter(const double* x, const double* P, const double* H,
 
 extern int resultFilter(double* x, double* y, double* z, int n);
 extern void test();
+extern void test_udPos(int n, double* F_in, double* x_in, double* P_in, double* xp_out, double* Pp_out);
 
 #ifdef WIN32
 #include <winsock2.h>
@@ -233,8 +234,8 @@ extern "C" {
 
 #define MINPRNSBS   120                 /* min satellite PRN number of SBAS */
 #define MAXPRNSBS   142                 /* max satellite PRN number of SBAS */
-#define NSATSBS     (MAXPRNSBS-MINPRNSBS+1) /* number of SBAS satellites */
-
+//#define NSATSBS     (MAXPRNSBS-MINPRNSBS+1) /* number of SBAS satellites */
+#define NSATSBS     0
 #define MAXSAT      (NSATGPS+NSATGLO+NSATGAL+NSATQZS+NSATCMP+NSATIRN+NSATSBS+NSATLEO)
                                         /* max satellite number (1 to MAXSAT) */
 #define MAXSTA      255

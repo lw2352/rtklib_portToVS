@@ -1127,15 +1127,15 @@ static int outecef(unsigned char* buff, const char* s, const sol_t* sol, const s
     const char* sep = opt2sep(opt);
     char* p = (char*)buff;
 
-#if 0
+#if 1
     static int ret=1;
-    static int windowSize = 60;
+    static int windowSize = 120;
     static double x, y, z;//滑动平均后的坐标
     static double x0, y0;//上一个历元的原始坐标
     static int n=0;//窗口大小
     static int count=1;//计数，动态窗口大小作用时间
     static int status = 0;
-    double dectectValue = 0.01;//灵敏度，单位米
+    double dectectValue = 0.005;//灵敏度，单位米
     if (opt->timef == 1)
     {
         //两个时刻的坐标差
@@ -1149,7 +1149,7 @@ static int outecef(unsigned char* buff, const char* s, const sol_t* sol, const s
         if (a > dectectValue || b > dectectValue)
         {
             n = 1;
-            //fprintf(stderr, "time:%s,detect move!\n",s);
+            fprintf(stderr, "Time:%s,Detect move!a=%f,b=%f\n",s,a,b);
         }
         else if (n < windowSize)
         {

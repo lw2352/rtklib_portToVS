@@ -91,6 +91,21 @@ int test_lambda(int n, int m, double* a, double* Q, double* F, double* s)
 	return ret;
 }
 
+//时间更新 x=F*x, P=F*P*F+Q(Q在本函数之后的语句中加入)
+void test_udPos(int n, double* F_in, double* x_in, double* P_in, double* xp_out, double* Pp_out)
+{
+	MatrixXd F = Map<Matrix<double, Dynamic, Dynamic, ColMajor> >(F_in, n, n);
+	MatrixXd x = Map<Matrix<double, Dynamic, Dynamic, ColMajor> >(x_in, n, 1);
+	MatrixXd P = Map<Matrix<double, Dynamic, Dynamic, ColMajor> >(P_in, n, n);
+
+	MatrixXd xp = F*x;
+	MatrixXd Pp = F*P*F.transpose();
+
+	Map<MatrixXd>(xp_out, n, 1) = xp;
+	Map<MatrixXd>(Pp_out, n, n) = Pp;
+}
+
+
 /* kalman filter ---------------------------------------------------------------
 * kalman filter state update as follows:
 *
@@ -108,6 +123,7 @@ int test_lambda(int n, int m, double* a, double* Q, double* F, double* s)
 * notes  : matirix stored by column-major order (fortran convention)
 *          if state x[i]==0.0, not updates state x[i]/P[i+i*n]
 *-----------------------------------------------------------------------------*/
+//状态更新
 int test_filter(double* x_in, double* P_in, double* H_in,
  double* v_in, double* R_in, int n, int m,
 	double* xp_out, double* Pp_out)
@@ -135,8 +151,6 @@ int test_filter(double* x_in, double* P_in, double* H_in,
 	VectorXd xp = x + K * v;
 	Eigen::MatrixXd I = Eigen::MatrixXd::Identity(x.size(), x.size());
 	MatrixXd Pp = (I - K * H.transpose()) * P;
-	//https://zhuanlan.zhihu.com/p/159246989 计算机处理时可能由于截断误差导致Pp矩阵不对称。使用等效的计算公式Pp=(I-KH')P(I-KH')'+KRK' 更稳健
-	//MatrixXd Pp = (I - K * H.transpose()) * P*(I - K * H.transpose()).transpose()+K*R*K.transpose();
 
 	Map<MatrixXd>(xp_out, n, 1) = xp;
 	Map<MatrixXd>(Pp_out, n, n) = Pp;
