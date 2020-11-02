@@ -112,11 +112,11 @@ void main()
 	prcopt_t prcopt=prcopt_default;
 	solopt_t solopt=solopt_default;
 	filopt_t filopt={""};
-	char* infile[]={{"D:\\Documents\\Visual Studio 2019\\rtklib_portToVS\\rtklib_2.4.3\\data\\7.obs"},
-					{"D:\\Documents\\Visual Studio 2019\\rtklib_portToVS\\rtklib_2.4.3\\data\\8.obs"},
-					{"D:\\Documents\\Visual Studio 2019\\rtklib_portToVS\\rtklib_2.4.3\\data\\8.nav"},
+	char* infile[]={{"D:\\Documents\\testData\\data\\5.obs"},
+					{"D:\\Documents\\testData\\data\\6.obs"},
+					{"D:\\Documents\\testData\\data\\6.nav"},
 	};
-	char* outfile="D:\\Documents\\Visual Studio 2019\\rtklib_portToVS\\rtklib_2.4.3\\data\\9.pos";
+	char* outfile="D:\\Documents\\testData\\data\\6.pos";
 	
 	//prcopt.mode= PMODE_STATIC;
 	//prcopt.navsys = SYS_GPS;
