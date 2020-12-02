@@ -47,7 +47,8 @@
 
 #define MAXPRCDAYS  100          /* max days of continuous processing */
 #define MAXINFILE   1000         /* max number of input files */
-
+#define SQR(x)      ((x)*(x))
+#define VAR_POS     SQR(30.0)
 /* constants/global variables ------------------------------------------------*/
 
 static pcvs_t pcvss={0};        /* receiver antenna parameters */
@@ -408,9 +409,18 @@ static void corr_phase_bias_ssr(obsd_t *obs, int n, const nav_t *nav)
         obs[i].L[j]-=nav->ssr[obs[i].sat-1].pbias[code-1]/lam;
     }
 }
+/* initialize state and covariance -------------------------------------------*/
+static void initx(rtk_t *rtk, double xi, double var, int i)
+{
+    int j;
+    rtk->x[i]=xi;
+    for (j=0;j<rtk->nx;j++) {
+        rtk->P[i+j*rtk->nx]=rtk->P[j+i*rtk->nx]=i==j?var:0.0;
+    }
+}
 /* process positioning -------------------------------------------------------*/
-static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *sopt,
-                    rtk_t *rtk, int mode)
+static void procpos(FILE *fp, FILE* fpK, FILE *fptm, const prcopt_t *popt, const solopt_t *sopt,
+                    rtk_t *rtk, const prcopt_t* poptK, rtk_t* rtkK, int mode)
 {
     gtime_t time={0};
     sol_t sol={{0}},oldsol={{0}},newsol={{0}};
@@ -424,8 +434,11 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
               (popt->mode==PMODE_STATIC||popt->mode==PMODE_STATIC_START||popt->mode==PMODE_PPP_STATIC);
     
     /* initialize unless running backwards on a combined run with continuous AR in which case keep the current states */
-    if (mode==0 || !revs || popt->modear==ARMODE_FIXHOLD)
-        rtkinit(rtk,popt);
+    if (mode == 0 || !revs || popt->modear == ARMODE_FIXHOLD)
+    {
+        rtkinit(rtk, popt);
+        rtkinit(rtkK, poptK);
+    }
     
     rtcm_path[0]='\0';
     
@@ -460,11 +473,43 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
                 }
             }
             continue;
-        }
+         }
+         if (!rtkpos(rtkK, obs, n, &navs)) {
+             if (rtk->sol.eventime.time != 0) {
+                 if (mode == 0) {
+                     outinvalidtm(fptm, sopt, rtk->sol.eventime);
+                 }
+                 else if (!revs) {
+                     invalidtm[nitm++] = rtk->sol.eventime;
+                 }
+             }
+             continue;
+         }
         
         if (mode==0) { /* forward/backward */
             if (!solstatic) {
-                outsol(fp,&rtk->sol,rtk->rb,sopt);
+                //outsol(fp,&rtk->sol,rtk->rb,sopt);
+                //outsol(fpK, &rtkK->sol, rtkK->rb, sopt);
+                double ret[3] = { 0 };
+                resultSTD(&rtkK->sol.rr,4,&ret);//计算n个坐标点的方差
+                char s[256];
+                time2str(rtkK->sol.time, s, 3);//时间格式转换
+                fprintf(stderr, "Time:%s,var(x)=%f,var(y)=%f\n", s, ret[0],ret[1]);
+
+                if (ret[0] < 0.00004)//经验值
+                {
+                    //静态
+                    outsol(fp, &rtk->sol, rtk->rb, sopt);
+                }
+                else
+                {
+                    //动态
+                    fprintf(stderr, "\nTime:%s,switch to kinematic!\n\n", s);
+                    for (i = 0; i < 3; i++) initx(rtk, rtkK->sol.rr[i], VAR_POS, i);
+                    outsol(fp, &rtkK->sol, rtk->rb, sopt);
+                }
+                //用c++计算最近几个数据的方差，判断是否发生移动
+                //若移动开始，输出使用动态定位的结果，若停止移动，则切换到静态定位，udpos
             }
             else if (time.time==0||pri[rtk->sol.stat]<=pri[sol.stat]) {
                 sol=rtk->sol;
@@ -1086,9 +1131,15 @@ static int execses(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
                    const solopt_t *sopt, const filopt_t *fopt, int flag,
                    char **infile, const int *index, int n, char *outfile)
 {
-    FILE *fp,*fptm;
+    FILE *fp,*fpK,*fptm;
     rtk_t rtk;
+    
     prcopt_t popt_=*popt;
+    //test
+    rtk_t rtkK;
+    prcopt_t popt_K = *popt;
+    popt_K.mode = PMODE_KINEMA;
+
     solopt_t tmsopt = *sopt;
     char tracefile[1024],statfile[1024],path[1024],*ext,outfiletm[1024]={0};
     
@@ -1180,13 +1231,18 @@ static int execses(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
 
     iobsu=iobsr=isbs=ilex=revs=aborts=0;
     
-    if (popt_.mode==PMODE_SINGLE||popt_.soltype==0) {
-        if ((fp=openfile(outfile)) && (fptm=openfile(outfiletm))) {
-            procpos(fp,fptm,&popt_,sopt,&rtk,0); /* forward */
+    if (popt_.mode==PMODE_SINGLE||popt_.soltype==0) 
+    {
+        char* outfileK = "D:\\Documents\\testData\\data\\8-1.pos";
+        if ((fp=openfile(outfile)) && (fpK = openfile(outfileK)) && (fptm=openfile(outfiletm)))
+        {
+            procpos(fp,fpK,fptm,&popt_,sopt,&rtk, &popt_K, &rtkK,0); /* forward */
+            
             fclose(fp);
             fclose(fptm);
         }
     }
+#if 0
     else if (popt_.soltype==1) {
         if ((fp=openfile(outfile)) && (fptm=openfile(outfiletm))) {
             revs=1; iobsu=iobsr=obss.n-1; isbs=sbss.n-1; ilex=lexs.n-1;
@@ -1221,6 +1277,7 @@ static int execses(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
         free(rbb);
         rtkfree(&rtk);
     }
+#endif
     /* free obs and nav data */
     freeobsnav(&obss,&navs);
     

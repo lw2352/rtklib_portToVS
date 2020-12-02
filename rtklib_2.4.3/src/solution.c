@@ -1127,7 +1127,7 @@ static int outecef(unsigned char* buff, const char* s, const sol_t* sol, const s
     const char* sep = opt2sep(opt);
     char* p = (char*)buff;
 
-#if 1
+#if 0
     static int ret=1;
     static int windowSize = 120;
     static double x, y, z;//滑动平均后的坐标
@@ -1183,7 +1183,7 @@ static int outecef(unsigned char* buff, const char* s, const sol_t* sol, const s
                 sep, sqvar(sol->qr[3]), sep, sqvar(sol->qr[4]), sep, sqvar(sol->qr[5]),
                 sep, sol->age, sep, sol->ratio);
             p += sprintf(p, "\n");
-            trace(1, "outecef:%s\n", buff);
+            trace(3, "outecef:%s\n", buff);
             int n = p - (char*)buff;
             return n;
         }

@@ -98,8 +98,9 @@ void test_udPos(int n, double* F_in, double* x_in, double* P_in, double* xp_out,
 	MatrixXd x = Map<Matrix<double, Dynamic, Dynamic, ColMajor> >(x_in, n, 1);
 	MatrixXd P = Map<Matrix<double, Dynamic, Dynamic, ColMajor> >(P_in, n, n);
 
+	double s = 0.995;
 	MatrixXd xp = F*x;
-	MatrixXd Pp = F*P*F.transpose();
+	MatrixXd Pp = F*((1.0/s)*P)*F.transpose();
 
 	Map<MatrixXd>(xp_out, n, 1) = xp;
 	Map<MatrixXd>(Pp_out, n, n) = Pp;
@@ -252,6 +253,62 @@ double transformData(string data)
 		j++;
 	}
 	return atof(ret);
+}
+
+int resultSTD(double* rr, int n,double *out)
+{
+	static vector<double> X, Y, Z;
+	double sumX=0, sumY=0, sumZ=0;
+	//添加数据
+	//if (X.size() < n)
+	//{
+	X.push_back(rr[0]);
+	Y.push_back(rr[1]);
+	Z.push_back(rr[2]);
+	//}
+	//数据小于窗口大小时输出原始数据
+	if (X.size() < n)
+	{
+		return 1;
+	}
+	else if (X.size() >= n)
+	{
+		//cout << setprecision(15)<< X[0] << "  " << setprecision(15) << X[1] << "  " << setprecision(15) << X[2] << "  " << endl;
+		int i = X.size() - 1;
+		int j = 0;
+		//对最新的n个数据求平均值
+		do
+		{
+			//*x += X[i] / n;
+			//*y += Y[i] / n;
+			//*z += Z[i] / n;
+			sumX += X[i];
+			sumY += Y[i];
+			sumZ += Z[i];
+			i--;
+			j++;
+		} while (j < n);
+		//求均值
+		double meanX = sumX / n;
+		double meanY = sumY / n;
+		double meanZ = sumZ / n;
+		double accumX = 0.0, accumY = 0.0, accumZ= 0.0;
+		for(int j=0,i= X.size() - 1; j<n; j++,i--)
+		{
+			accumX += (X[i] - meanX) * (X[i] - meanX);
+			accumY += (Y[i] - meanY) * (Y[i] - meanY);
+			accumZ += (Z[i] - meanZ) * (Z[i] - meanZ);
+		}
+		//方差
+		out[0] = (accumX / (double)(n));
+		out[1] = (accumY / (double)(n));
+		out[2] = (accumZ / (double)(n));
+		X.erase(X.begin());
+		Y.erase(Y.begin());
+		Z.erase(Z.begin());
+
+		return 1;
+	}
 }
 
 /*static double a = 6378137;//6378140;  //椭球的长半轴

@@ -99,8 +99,8 @@ static opt_t rcvopts[] = {
 
 void main()
 {
-    int level = 2;
-#if 1
+    int level = 1;
+#if 0
     //test();
 	rtkrcv(level);
 #else
@@ -109,14 +109,17 @@ void main()
 	tracelevel(level);
 	char file[MAXSTR] = "";
 	gtime_t ts={0},te={0};
+    double es[] = { 2020,6,29,8,28,0 }, ee[] = { 2020,6,29,8,35,0 };
+    //ts = epoch2time(es);te = epoch2time(ee);
+    
 	prcopt_t prcopt=prcopt_default;
 	solopt_t solopt=solopt_default;
 	filopt_t filopt={""};
-	char* infile[]={{"D:\\Documents\\testData\\data\\5.obs"},
-					{"D:\\Documents\\testData\\data\\6.obs"},
-					{"D:\\Documents\\testData\\data\\6.nav"},
+	char* infile[]={{"D:\\Documents\\testData\\data\\7.obs"},
+					{"D:\\Documents\\testData\\data\\8.obs"},
+					{"D:\\Documents\\testData\\data\\8.nav"},
 	};
-	char* outfile="D:\\Documents\\testData\\data\\6.pos";
+	char* outfile="D:\\Documents\\testData\\data\\8.pos";
 	
 	//prcopt.mode= PMODE_STATIC;
 	//prcopt.navsys = SYS_GPS;

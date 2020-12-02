@@ -60,6 +60,7 @@ extern int test_filter(const double* x, const double* P, const double* H,
 extern int resultFilter(double* x, double* y, double* z, int n);
 extern void test();
 extern void test_udPos(int n, double* F_in, double* x_in, double* P_in, double* xp_out, double* Pp_out);
+extern int resultSTD(double* rr, int n, double* out);
 
 #ifdef WIN32
 #include <winsock2.h>
@@ -979,6 +980,7 @@ typedef struct {        /* solution type */
     float prev_ratio1;   /* previous initial AR ratio factor for validation */
     float prev_ratio2;   /* previous final AR ratio factor for validation */
     float thres;        /* AR ratio threshold for valiation */
+    
 } sol_t;
 
 typedef struct {        /* solution buffer type */

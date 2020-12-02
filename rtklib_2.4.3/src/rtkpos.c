@@ -521,7 +521,8 @@ static void udpos(rtk_t *rtk, double tt)
         }
     }
     /* static mode */
-    if (rtk->opt.mode==PMODE_STATIC||rtk->opt.mode==PMODE_STATIC_START) return;
+    if (rtk->opt.mode==PMODE_STATIC) 
+        return;
     
     /* kinmatic mode without dynamics */
     if (!rtk->opt.dynamics) {
@@ -567,28 +568,23 @@ static void udpos(rtk_t *rtk, double tt)
     double* P1 = mat(nx, nx);
     int ret;
     matcpy(P1, P, nx, nx);
+
     /*fprintf(stderr, "P1:\n");
     ret=memcmp(P1,P,nx*nx);
-    matfprint(P, nx, nx, 4, 2, stdout);
+    matfprint(P, nx, nx, 4, 2, stdout);*/
     matmul("NN",nx,1,nx,1.0,F,x,0.0,xp);
     matmul("NN",nx,nx,nx,1.0,F,P,0.0,FP);
     matmul("NT",nx,nx,nx,1.0,FP,F,0.0,P);
-    fprintf(stderr, "xp:\n");
+    /*fprintf(stderr, "xp:\n");
     matfprint(xp, nx, 1, 4, 2, stdout);
     fprintf(stderr, "P:\n");
     matfprint(P, nx, nx, 4, 2, stdout);*/
     //test
-    double* Pp = mat(nx, nx);
+    /*double* Pp = mat(nx, nx);
     double* Xp = mat(nx, 1);
     test_udPos(nx,F,x,P1,Xp,Pp);
-    /*fprintf(stderr, "Xp:\n");
-    matfprint(Xp, nx, 1, 4, 2, stdout);
-    ret = memcmp(Xp, xp, nx * 1);
-    fprintf(stderr, "Pp:\n");
-    matfprint(Pp, nx, nx, 4, 2, stdout);
-    ret = memcmp(Pp, P, nx * nx);*/
     matcpy(P,Pp,nx,nx);
-    matcpy(xp, Xp, nx, 1);
+    matcpy(xp, Xp, nx, 1);*/
     //end of test
     for (i=0;i<nx;i++) {
         rtk->x[ix[i]]=xp[i];
@@ -689,6 +685,7 @@ static void udrcvbias(rtk_t *rtk, double tt)
 //delete sat
 static void deleteSat(rtk_t* rtk, int sat)
 {
+#if 0
     static int count[MAXSAT] = { 0 };
     count[sat - 1]++;
     if (count[sat - 1] > 3)//slip超过3次就排除
@@ -697,6 +694,7 @@ static void deleteSat(rtk_t* rtk, int sat)
         rtk->opt.exsats[sat - 1] = 1;
         fprintf(stderr, "\nREMOVE sat= %d!\n", sat);
     }
+#endif
 }
 /* detect cycle slip by LLI --------------------------------------------------*/
 static void detslp_ll(rtk_t *rtk, const obsd_t *obs, int i, int rcv)
@@ -1083,7 +1081,7 @@ static int zdres(int base, const obsd_t *obs, int n, const double *rs,
     /* loop through satellites */
     for (i=0;i<n;i++) {
         /* compute geometric-range and azimuth/elevation angle */
-        if ((r=geodist(rs+i*6,rr_,e+i*3))<=0.0) continue;
+        if ((r=geodist(rs+i*6,rr_,e+i*3))<=0.0) continue;//r时站星距
         if (satazel(pos,e+i*3,azel+i*2)<opt->elmin) continue;
         
         /* excluded satellite? */
@@ -1338,15 +1336,15 @@ static int ddres(rtk_t *rtk, const nav_t *nav, const obsd_t *obs, double dt, con
             
                 //用传入的没有差分的相位/码残差y计算双差残差v，并计算对应的H
                 /* double-differenced measurements from 2 receivers and 2 sats in meters */
-                v[nv]=(y[f+iu[i]*nf*2]-y[f+ir[i]*nf*2])-(y[f+iu[j]*nf*2]-y[f+ir[j]*nf*2]);
-                /*double a, bb, c, d,ee,ff;
+                //v[nv]=(y[f+iu[i]*nf*2]-y[f+ir[i]*nf*2])-(y[f+iu[j]*nf*2]-y[f+ir[j]*nf*2]);
+                double a, bb, c, d,ee,ff;
                 a = y[f + iu[i] * nf * 2];
                 bb = y[f + ir[i] * nf * 2];
                 c = y[f + iu[j] * nf * 2];
                 d = y[f + ir[j] * nf * 2];
                 ee = (a - bb);
                 ff = (c - d);
-                v[nv] = ee - ff;*/
+                v[nv] = ee - ff;
                 /* partial derivatives by rover position, combine unit vectors from two sats */
                 if (H) {
                     for (k=0;k<3;k++) 
