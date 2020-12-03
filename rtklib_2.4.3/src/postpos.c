@@ -488,13 +488,11 @@ static void procpos(FILE *fp, FILE* fpK, FILE *fptm, const prcopt_t *popt, const
         
         if (mode==0) { /* forward/backward */
             if (!solstatic) {
-                //outsol(fp,&rtk->sol,rtk->rb,sopt);
-                //outsol(fpK, &rtkK->sol, rtkK->rb, sopt);
                 double ret[3] = { 0 };
                 resultSTD(&rtkK->sol.rr,4,&ret);//计算n个坐标点的方差
                 char s[256];
                 time2str(rtkK->sol.time, s, 3);//时间格式转换
-                fprintf(stderr, "Time:%s,var(x)=%f,var(y)=%f\n", s, ret[0],ret[1]);
+                //fprintf(stderr, "Time:%s,var(x)=%f,var(y)=%f\n", s, ret[0],ret[1]);
 
                 if (ret[0] < 0.00004)//经验值
                 {
@@ -504,7 +502,8 @@ static void procpos(FILE *fp, FILE* fpK, FILE *fptm, const prcopt_t *popt, const
                 else
                 {
                     //动态
-                    fprintf(stderr, "\nTime:%s,switch to kinematic!\n\n", s);
+                    fprintf(stderr, "\nTime:%s,switch to kinematic!var(x)=%f,var(y)=%f\n\n", s, ret[0], ret[1]);
+                    //resultFilter(&rtkK->sol.rr[0], &rtkK->sol.rr[1], &rtkK->sol.rr[2], n / 2);
                     for (i = 0; i < 3; i++) initx(rtk, rtkK->sol.rr[i], VAR_POS, i);
                     outsol(fp, &rtkK->sol, rtk->rb, sopt);
                 }
