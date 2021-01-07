@@ -419,7 +419,7 @@ static void initx(rtk_t *rtk, double xi, double var, int i)
     }
 }
 /* process positioning -------------------------------------------------------*/
-static void procpos(FILE *fp, FILE* fpK, FILE *fptm, const prcopt_t *popt, const solopt_t *sopt,
+static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *sopt,
                     rtk_t *rtk, const prcopt_t* poptK, rtk_t* rtkK, int mode)
 {
     gtime_t time={0};
@@ -489,12 +489,18 @@ static void procpos(FILE *fp, FILE* fpK, FILE *fptm, const prcopt_t *popt, const
         if (mode==0) { /* forward/backward */
             if (!solstatic) {
                 double ret[3] = { 0 };
-                resultSTD(&rtkK->sol.rr,4,&ret);//计算n个坐标点的方差
+                double num = 0.006;//经验值
+                resultSTD(&rtkK->sol.rr,4,&ret);//计算n个坐标点的标准差
+                rtkK->sol.qr[0]= rtk->sol.qr[0] = ret[0];
+                rtkK->sol.qr[1]= rtk->sol.qr[1] = ret[1];
+                rtkK->sol.qr[2]= rtk->sol.qr[2] = ret[2];
+                
                 char s[256];
                 time2str(rtkK->sol.time, s, 3);//时间格式转换
-                //fprintf(stderr, "Time:%s,var(x)=%f,var(y)=%f\n", s, ret[0],ret[1]);
-
-                if (ret[0] < 0.00004)//经验值
+#if 1
+                outsol(fp, &rtkK->sol, rtk->rb, sopt);
+#else
+                if (ret[0] < num && ret[1] < num && ret[2] < num)
                 {
                     //静态
                     outsol(fp, &rtk->sol, rtk->rb, sopt);
@@ -502,11 +508,14 @@ static void procpos(FILE *fp, FILE* fpK, FILE *fptm, const prcopt_t *popt, const
                 else
                 {
                     //动态
-                    fprintf(stderr, "\nTime:%s,switch to kinematic!var(x)=%f,var(y)=%f\n\n", s, ret[0], ret[1]);
+                    fprintf(stderr, "\nTime:%s,switch to kinematic!std(x)=%f,std(y)=%f\n\n", s, ret[0], ret[1]);
                     //resultFilter(&rtkK->sol.rr[0], &rtkK->sol.rr[1], &rtkK->sol.rr[2], n / 2);
                     for (i = 0; i < 3; i++) initx(rtk, rtkK->sol.rr[i], VAR_POS, i);
+                    rtkK->sol.stat = 3;//换一种指示颜色
+                    
                     outsol(fp, &rtkK->sol, rtk->rb, sopt);
                 }
+#endif
                 //用c++计算最近几个数据的方差，判断是否发生移动
                 //若移动开始，输出使用动态定位的结果，若停止移动，则切换到静态定位，udpos
             }
@@ -1232,10 +1241,9 @@ static int execses(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
     
     if (popt_.mode==PMODE_SINGLE||popt_.soltype==0) 
     {
-        char* outfileK = "D:\\Documents\\testData\\data\\8-1.pos";
-        if ((fp=openfile(outfile)) && (fpK = openfile(outfileK)) && (fptm=openfile(outfiletm)))
+        if ((fp=openfile(outfile)) && (fptm=openfile(outfiletm)))
         {
-            procpos(fp,fpK,fptm,&popt_,sopt,&rtk, &popt_K, &rtkK,0); /* forward */
+            procpos(fp,fptm,&popt_,sopt,&rtk, &popt_K, &rtkK,0); /* forward */
             
             fclose(fp);
             fclose(fptm);

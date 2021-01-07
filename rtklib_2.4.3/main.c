@@ -135,5 +135,6 @@ void main()
 	getsysopts(&prcopt, &solopt, &filopt);
 
 	postpos(ts,te,0,0,&prcopt,&solopt,&filopt,infile,3,outfile,NULL,NULL);
+    MessageBeep(MB_OK);
 #endif
 }

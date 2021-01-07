@@ -147,6 +147,11 @@ int test_filter(double* x_in, double* P_in, double* H_in,
 	Map<MatrixXd>(h1, n, m) = H;
 	Map<MatrixXd>(v1, m, 1) = v;
 	Map<MatrixXd>(r1, m, m) = R;
+
+	double test11[6] = { 1,2,3,4,5,6 }, test1[6];
+	MatrixXd P1 = Map<Matrix<double, Dynamic, Dynamic, ColMajor> >(test11, 2, 3);
+	MatrixXd Kk = P1.transpose();
+	Map<MatrixXd>(test1, 3, 2) = Kk;
 //test end	
 	MatrixXd K = P * H * ((H.transpose() * P * H + R).inverse());
 	VectorXd xp = x + K * v;
@@ -299,10 +304,10 @@ int resultSTD(double* rr, int n,double *out)
 			accumY += (Y[i] - meanY) * (Y[i] - meanY);
 			accumZ += (Z[i] - meanZ) * (Z[i] - meanZ);
 		}
-		//·½²î
-		out[0] = (accumX / (double)(n));
-		out[1] = (accumY / (double)(n));
-		out[2] = (accumZ / (double)(n));
+		//±ê×¼²î
+		out[0] = sqrt(accumX / (double)(n));
+		out[1] = sqrt(accumY / (double)(n));
+		out[2] = sqrt(accumZ / (double)(n));
 		X.erase(X.begin());
 		Y.erase(Y.begin());
 		Z.erase(Z.begin());
