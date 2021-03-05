@@ -1183,7 +1183,7 @@ static int outecef(unsigned char* buff, const char* s, const sol_t* sol, const s
                 sep, sqvar(sol->qr[3]), sep, sqvar(sol->qr[4]), sep, sqvar(sol->qr[5]),
                 sep, sol->age, sep, sol->ratio);
             p += sprintf(p, "\n");
-            trace(3, "outecef:%s\n", buff);
+            trace(2, "outecef:%s\n", buff);
             int n = p - (char*)buff;
             return n;
         }
