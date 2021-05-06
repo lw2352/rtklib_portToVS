@@ -852,6 +852,7 @@ static void probserv(vt_t *vt, int nf)
 /* print navigation data -----------------------------------------------------*/
 static void prnavidata(vt_t *vt)
 {
+#if 0
     eph_t eph[MAXSAT];
     geph_t geph[MAXPRNGLO];
     double ion[8],utc[4];
@@ -901,6 +902,7 @@ static void prnavidata(vt_t *vt)
             ion[0],ion[1],ion[2],ion[3],ion[4],ion[5],ion[6],ion[7]);
     vt_printf(vt,"UTC: %9.2E %9.2E %9.2E %9.2E  LEAPS: %d\n",utc[0],utc[1],utc[2],
             utc[3],leaps);
+#endif
 }
 /* print error/warning messages ----------------------------------------------*/
 static void prerror(vt_t *vt)
@@ -1657,9 +1659,7 @@ int rtkrcv(int trace)
         traceopen(TRACEFILE);
         tracelevel(trace);
     }
-    //my test
-    //test();
-    //return 0;
+    
     /* initialize rtk server and monitor port */
     rtksvrinit(&svr);
     strinit(&moni);

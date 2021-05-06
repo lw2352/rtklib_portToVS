@@ -552,7 +552,7 @@ void changeLED(int solStat)
         //all on
         a = 3;
     }
-    printf("a=%d\n",a);
+    //printf("a=%d\n",a);
 }
 /* rtk server thread ---------------------------------------------------------*/
 #ifdef WIN32
@@ -606,7 +606,7 @@ static void *rtksvrthread(void *arg)
             }
             else {
                 /* decode receiver raw/rtcm data */
-                fobs[i]=decoderaw(svr,i);
+                fobs[i]=decoderaw(svr,i);//½âÂëÊý¾Ý
             }
         }
         /* averaging single base pos */

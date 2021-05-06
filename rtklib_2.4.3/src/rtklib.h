@@ -42,7 +42,7 @@
 #define TRACE
 #define WIN32
 #define WIN_DLL
-#define ENAGLO
+//#define ENAGLO
 #define ENACMP
 #pragma warning(disable:4996)
 #pragma warning(disable:4101)
@@ -61,7 +61,8 @@ extern int resultFilter(double* x, double* y, double* z, int n);
 extern void test();
 extern void test_udPos(int n, double* F_in, double* x_in, double* P_in, double* xp_out, double* Pp_out);
 extern int resultSTD(double* rr, int n, double* out);
-
+extern int test_lsq(double* A_in, double* y_in, int n, int m, double* x_in, double* Q_in);
+extern void testVel(double* Ir_in, double* Ib_in, double* Vs_in, double* Fr_in, double* Fb_in, double* x_in, int n, double lam);
 #ifdef WIN32
 #include <winsock2.h>
 #include <windows.h>
@@ -586,6 +587,9 @@ typedef struct {        /* observation data record */
     double L[NFREQ+NEXOBS]; /* observation data carrier-phase (cycle) */
     double P[NFREQ+NEXOBS]; /* observation data pseudorange (m) */
     float  D[NFREQ+NEXOBS]; /* observation data doppler frequency (Hz) */
+    //add by lw
+    double lam;
+    double Ir[NSATGPS *3],Ib[NSATGPS * 3],Fr[NSATGPS],Fb[NSATGPS],Vs[NSATGPS * 3];//此处的f已经乘以波长
 } obsd_t;
 
 typedef struct {        /* observation data */
@@ -974,6 +978,7 @@ typedef struct {        /* solution type */
     double dtr[6];      /* receiver clock bias to time systems (s) */
     unsigned char type; /* type (0:xyz-ecef,1:enu-baseline) */
     unsigned char stat; /* solution status (SOLQ_???) */
+    unsigned char solStat;
     unsigned char ns;   /* number of valid satellites */
     float age;          /* age of differential (s) */
     float ratio;        /* AR ratio factor for valiation */

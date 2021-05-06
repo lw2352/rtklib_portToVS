@@ -419,12 +419,13 @@ static void initx(rtk_t *rtk, double xi, double var, int i)
     }
 }
 /* process positioning -------------------------------------------------------*/
+obsd_t obs[MAXOBS * 2]; /* for rover and base */
 static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *sopt,
                     rtk_t *rtk, const prcopt_t* poptK, rtk_t* rtkK, int mode)
 {
     gtime_t time={0};
     sol_t sol={{0}},oldsol={{0}},newsol={{0}};
-    obsd_t obs[MAXOBS*2]; /* for rover and base */
+    //obsd_t obs[MAXOBS*2]; /* for rover and base */
     double rb[3]={0};
     int i,nobs,n,solstatic,num=0,pri[]={0,1,2,3,4,5,1,6};
     
@@ -442,7 +443,8 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
     
     rtcm_path[0]='\0';
     
-    while ((nobs=inputobs(obs,rtk->sol.stat,popt))>=0) {
+    while ((nobs=inputobs(obs,rtk->sol.stat,popt))>=0) 
+    {
         
         /* exclude satellites */
         for (i=n=0;i<nobs;i++) {
@@ -464,6 +466,7 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
             for (i=0;i<n;i++) obs[i].L[1]=obs[i].P[1]=0.0;
         }
 #endif
+        //原始
          if (!rtkpos(rtk,obs,n,&navs)) {
             if (rtk->sol.eventime.time != 0) {
                 if (mode == 0) {
@@ -474,7 +477,8 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
             }
             continue;
          }
-         if (!rtkpos(rtkK, obs, n, &navs)) {
+         //test
+         /*if (!rtkpos(rtkK, obs, n, &navs)) {
              if (rtk->sol.eventime.time != 0) {
                  if (mode == 0) {
                      outinvalidtm(fptm, sopt, rtk->sol.eventime);
@@ -484,11 +488,12 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
                  }
              }
              continue;
-         }
+         }*/
         
         if (mode==0) { /* forward/backward */
-            if (!solstatic) {
-                double ret[3] = { 0 };
+            if (!solstatic) 
+            {
+                /*double ret[3] = { 0 };
                 double num = 0.006;//经验值
                 resultSTD(&rtkK->sol.rr,4,&ret);//计算n个坐标点的标准差
                 rtkK->sol.qr[0]= rtk->sol.qr[0] = ret[0];
@@ -496,9 +501,9 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
                 rtkK->sol.qr[2]= rtk->sol.qr[2] = ret[2];
                 
                 char s[256];
-                time2str(rtkK->sol.time, s, 3);//时间格式转换
+                time2str(rtkK->sol.time, s, 3);//时间格式转换*/
 #if 1
-                outsol(fp, &rtkK->sol, rtk->rb, sopt);
+                outsol(fp, &rtk->sol, rtk->rb, sopt);
 #else
                 if (ret[0] < num && ret[1] < num && ret[2] < num)
                 {

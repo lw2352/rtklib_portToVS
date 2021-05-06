@@ -1,6 +1,6 @@
 #include "src/rtklib.h"
 
-#define TRACEFILE   ""
+#define TRACEFILE   "../rtklib_2.4.3/trace_%Y%m%d%h%M.txt"
 #define OPTSDIR     "."                 /* default config directory */
 #define OPTSFILE    "../rtklib_2.4.3/rtk.conf"       /* default config file */
 #define MAXSTR      1024                /* max length of a stream */
@@ -100,26 +100,30 @@ static opt_t rcvopts[] = {
 void main()
 {
     int level = 2;
-#if 1
+#if 0
     //test();
 	rtkrcv(level);
+#elif 0
+    //my test
+    test();
+    return 0;
 #else
-    
 	traceopen(TRACEFILE);
 	tracelevel(level);
 	char file[MAXSTR] = "";
 	gtime_t ts={0},te={0};
-    double es[] = { 2020,6,29,8,28,0 }, ee[] = { 2020,6,29,8,35,0 };
-    //ts = epoch2time(es);te = epoch2time(ee);
+    double es[] = { 2021,3,19,0,4,00 }, ee[] = { 2021,3,19,0,10,0 };
+    ts = epoch2time(es);te = epoch2time(ee);
     
 	prcopt_t prcopt=prcopt_default;
 	solopt_t solopt=solopt_default;
 	filopt_t filopt={""};
-	char* infile[]={{"D:\\Documents\\testData\\data\\7.obs"},
-					{"D:\\Documents\\testData\\data\\8.obs"},
-					{"D:\\Documents\\testData\\data\\8.nav"},
+	char* infile[]={
+        {"D:\\data\\3-19\\10min_r.obs"},
+        {"D:\\data\\3-19\\10min_b.obs"},
+	    {"D:\\data\\3-19\\XTDX10780.21N"}
 	};
-	char* outfile="D:\\Documents\\testData\\data\\8.pos";
+	char* outfile="D:\\data\\3-19\\sol.txt";
 	
 	//prcopt.mode= PMODE_STATIC;
 	//prcopt.navsys = SYS_GPS;
@@ -135,6 +139,6 @@ void main()
 	getsysopts(&prcopt, &solopt, &filopt);
 
 	postpos(ts,te,0,0,&prcopt,&solopt,&filopt,infile,3,outfile,NULL,NULL);
-    MessageBeep(MB_OK);
 #endif
+    return 0;
 }
