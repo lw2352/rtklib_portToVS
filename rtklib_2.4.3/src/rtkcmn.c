@@ -1106,7 +1106,8 @@ extern int lsq(const double *A, const double *y, int n, int m, double *x,
     Ay=mat(n,1);
     matmul("NN",n,1,m,1.0,A,y,0.0,Ay); /* Ay=A*y */
     matmul("NT",n,n,m,1.0,A,A,0.0,Q);  /* Q=A*A' */
-    if (!(info=matinv(Q,n))) matmul("NN",n,1,n,1.0,Q,Ay,0.0,x); /* x=Q^-1*Ay */
+    if (!(info=matinv(Q,n)))//Q=Q^-1
+         matmul("NN",n,1,n,1.0,Q,Ay,0.0,x); /* x=Q^-1*Ay */
     free(Ay);
     return info;
 }
@@ -1145,11 +1146,17 @@ static int filter_(const double *x, const double *P, const double *H,
         matmul("NT",n,n,m,-1.0,K,H,1.0,I);  /* Pp=(I-K*H')*P */
         matmul("NN",n,n,n,1.0,I,P,0.0,Pp);
     }
+    else
+    {
+        trace(2, "Q=\n");
+        tracemat(2, Q, m, m, 7, 4);
+    }
     free(F); free(Q); free(K); free(I);
     return info;
 }
 
 //代码里的H是公式中的H的转置,矩阵mat是列优先存储
+//filter 函数首先进行状态预测，然后调用 filter_ 函数进行校正
 extern int filter(double *x, double *P, const double *H, const double *v,
                   const double *R, int n, int m)
 {
@@ -1157,7 +1164,12 @@ extern int filter(double *x, double *P, const double *H, const double *v,
     int i,j,k,info,*ix;
     
     /* create list of non-zero states */
-    ix=imat(n,1); for (i=k=0;i<n;i++) if (x[i]!=0.0&&P[i+i*n]>0.0) ix[k++]=i;
+    ix=imat(n,1); 
+    for (i = k = 0; i < n; i++)
+    {
+        if (x[i] != 0.0 && P[i + i * n] > 0.0)
+            ix[k++] = i;
+    }
     x_=mat(k,1); xp_=mat(k,1); P_=mat(k,k); Pp_=mat(k,k); H_=mat(k,m);
     /* compress array by removing zero elements to save computation time */
     
@@ -1167,8 +1179,8 @@ extern int filter(double *x, double *P, const double *H, const double *v,
         for (j=0;j<m;j++) H_[i+j*k]=H[ix[i]+j*n];
     }
     /* do kalman filter state update on compressed arrays */
-    //info=filter_(x_,P_,H_,v,R,k,m,xp_,Pp_);
-    info = test_filter(x_, P_, H_, v, R, k, m, xp_, Pp_);
+    info=filter_(x_,P_,H_,v,R,k,m,xp_,Pp_);
+    //info = test_filter(x_, P_, H_, v, R, k, m, xp_, Pp_);
     
     /* copy values from compressed arrays back to full arrays */
     for (i=0;i<k;i++) {
@@ -2937,8 +2949,11 @@ extern void traceopen(const char *file)
     char path[1024];
     
     reppath(file,path,time,"","");
-    //if (!*path||!(fp_trace=fopen(path,"w"))) fp_trace=stderr;
+#if 0
+    if (!*path||!(fp_trace=fopen(path,"w"))) fp_trace=stderr;
+#else
     fp_trace = stdout;
+#endif
     strcpy(file_trace,file);
     tick_trace=tickget();
     time_trace=time;

@@ -8,9 +8,10 @@
 #include <vector>
 #include<fstream>
 #include<sstream>
-using namespace std;
-using namespace Eigen;
+#include <map>
 
+using namespace Eigen;
+using namespace std;
 // Shows how to utilize MLAMBDA-Eigen
 int main0()
 {
@@ -139,20 +140,13 @@ int test_filter(double* x_in, double* P_in, double* H_in,
 	MatrixXd H = Map<Matrix<double, Dynamic, Dynamic, ColMajor> >(H_in, n, m);
 	VectorXd v = Map<Matrix<double, Dynamic, Dynamic, ColMajor> >(v_in, m, 1);
 	MatrixXd R = Map<Matrix<double, Dynamic, Dynamic, ColMajor> >(R_in, m, m);
-//test
-	double x1[80] = {0}, p1[80 * 80] = { 0 }, h1[80 * 80] = { 0 }, v1[80] = { 0 }, r1[80 * 80] = { 0 };
-	
-	Map<MatrixXd>(x1, n, 1) = x;
-	Map<MatrixXd>(p1, n, n) = P;
-	Map<MatrixXd>(h1, n, m) = H;
-	Map<MatrixXd>(v1, m, 1) = v;
-	Map<MatrixXd>(r1, m, m) = R;
-
-	double test11[6] = { 1,2,3,4,5,6 }, test1[6];
-	MatrixXd P1 = Map<Matrix<double, Dynamic, Dynamic, ColMajor> >(test11, 2, 3);
-	MatrixXd Kk = P1.transpose();
-	Map<MatrixXd>(test1, 3, 2) = Kk;
-//test end	
+#if 0
+	cout << "x=\n"<<x.transpose() << "\n";
+	cout << "P=\n" << P.transpose() << "\n";
+	cout << "H=\n" << H.transpose() << "\n";
+	cout << "v=\n" << v.transpose() << "\n";
+	cout << "R=\n" << R.transpose() << "\n";
+#endif
 	MatrixXd K = P * H * ((H.transpose() * P * H + R).inverse());
 	VectorXd xp = x + K * v;
 	Eigen::MatrixXd I = Eigen::MatrixXd::Identity(x.size(), x.size());
@@ -163,7 +157,76 @@ int test_filter(double* x_in, double* P_in, double* H_in,
 
 	return 0;
 }
+//这里的A已经是转置的了，和公式有点不一样
+int test_lsq(double* A_in, double* y_in, int n, int m, double* x_in,
+	double* Q_in)
+{
+	//cout << "start test_lsq\n";
+	if (m < n) return -1;
+	VectorXd x = Map<Matrix<double, Dynamic, Dynamic, ColMajor> >(x_in, n, 1);
+	MatrixXd Q = Map<Matrix<double, Dynamic, Dynamic, ColMajor> >(Q_in, n, n);
+	MatrixXd A = Map<Matrix<double, Dynamic, Dynamic, ColMajor> >(A_in, n, m);
+ 	VectorXd y = Map<Matrix<double, Dynamic, Dynamic, ColMajor> >(y_in, m, 1);
 
+	Q = (A * A.transpose()).inverse();
+	x = Q * A * y;
+	/*cout << x << "\n\n";
+	cout << Q << "\n\n";
+	cout << A << "\n\n";
+	cout << y << "\n\n";*/
+	Map<MatrixXd>(x_in, n, 1) = x;	
+	Map<MatrixXd>(Q_in, n, n) = Q;
+	return 0;//ok
+}
+
+void testVel(double* Ir_in, double* Ib_in, double* Vs_in, double* Fr_in, double* Fb_in, double* x_in, int n,double lam)
+{
+	//cout << "start testVel\n";
+	VectorXd x = Map<Matrix<double, Dynamic, Dynamic, ColMajor> >(x_in, 4, 1);
+	MatrixXd Ir = Map<Matrix<double, Dynamic, Dynamic, RowMajor> >(Ir_in, n, 3);
+	MatrixXd Ib = Map<Matrix<double, Dynamic, Dynamic, RowMajor> >(Ib_in, n, 3);
+	MatrixXd Vs = Map<Matrix<double, Dynamic, Dynamic, RowMajor> >(Vs_in, n, 3);
+	VectorXd Fr = Map<Matrix<double, Dynamic, Dynamic, ColMajor> >(Fr_in, n, 1);
+	VectorXd Fb = Map<Matrix<double, Dynamic, Dynamic, ColMajor> >(Fb_in, n, 1);
+#if 0
+	cout << x << "\n\n";
+	cout << Ir << "\n\n";
+	cout << Ib << "\n\n";
+	cout << Vs << "\n\n";
+	cout << Fr << "\n\n";
+	cout << Fb << "\n\n";
+#endif
+#if 1
+	VectorXd y = ((Ir - Ib) * (Vs.transpose())).diagonal() + (Fr - Fb)*lam;
+	//cout << y << "\n\n";
+	MatrixXd Q = MatrixXd::Zero(4, 4);
+	MatrixXd A = Ir;
+	A.conservativeResize(A.rows(), A.cols() + 1);
+	VectorXd I= VectorXd::Ones(n, 1);
+	A.col(A.cols()-1) = I;
+	//cout << A << "\n\n";
+	Q = (A.transpose() * A).inverse();
+	//cout << Q << "\n\n";
+	x = Q * A.transpose() * y;
+	cout << x.transpose() << "\n";
+	Map<MatrixXd>(x_in, 4, 1) = x;
+#else
+	//原始的单点测速
+	VectorXd y =(Ir * Vs.transpose()).diagonal();
+	cout << y << "\n\n";
+	y =-1*Fr - y;
+	cout << y << "\n\n";
+	MatrixXd A = -1*Ir;
+	A.conservativeResize(A.rows(), A.cols() + 1);
+	VectorXd I = VectorXd::Ones(n, 1);
+	A.col(A.cols() - 1) = I;
+	cout << A << "\n\n";
+	MatrixXd Q = (A.transpose() * A).inverse();
+	cout << Q << "\n\n";
+	x = Q * A.transpose() * y;
+	cout << x.transpose() << "\n"; 
+#endif
+}
 /*int resultFilter(double* x, double* y, double* z)
 {
 	static vector<double> X, Y, Z;
@@ -316,169 +379,82 @@ int resultSTD(double* rr, int n,double *out)
 	}
 }
 
-/*static double a = 6378137;//6378140;  //椭球的长半轴
-//static double f = 0.00335281006247;
-//static double b = a * (1 - f);
-static double e2 = 0.0067394967422764;//0.006694384999588;(a * a - b * b) / pow(b,2);
-static double m0 = a * (1 - e2);
-static double m2 = 3.0 / 2 * e2 * m0;
-static double m4 = 5.0 / 4 * e2 * m2;
-static double m6 = 7.0 / 6 * e2 * m4;
-static double m8 = 9.0 / 8 * e2 * m6;
-static double a0 = m0 + m2 / 2 + (3.0 / 8.0) * m4 + (5.0 / 16.0) * m6 + (35.0 / 128.0) * m8;
-static double a2 = m2 / 2 + m4 / 2 + 15.0 / 32 * m6 + 7.0 / 16 * m8;
-static double a4 = m4 / 8 + 3.0 / 16 * m6 + 7.0 / 32 * m8;
-static double a6 = m6 / 32 + m8 / 16;
-static double a8 = m8 / 128;
-static double xx = 0;
-static double yy = 0;
-static double _x = 0;
-static double _y = 0;
-static double BB = 0;
-static double LL = 0;
-static double PI = 3.1415926535897932;  /* pi */
-/*static double F(double Bfi0)
+class OBS
 {
-	double ret = 0.0 - a2 * sin(2 * Bfi0) / 2.0 + a4 * sin(4 * Bfi0) / 4.0 - a6 * sin(6 * Bfi0) / 6.0;
-	return ret;
+public:
+	string P, L, D, S;
+	OBS(string p,string l,string d,string s);
+};
+OBS::OBS(string p, string l, string d, string s)
+{
+	P = p; L = l; D = d; S = s;
 }
-static double hcfansuan(double pX)
-{
-	double Bf0 = pX / a0;
-	double Bf1, Bf2;
-	Bf1 = Bf0;
-	Bf2 = (pX - F(Bf1)) / a0;
-	while ((Bf2 - Bf1) > 1.0E-11)
-	{
-		Bf1 = Bf2;
-		Bf2 = (pX - F(Bf1)) / a0;
-	}
-	return Bf1;
-}
-static void GaussNegative(double x, double y, double L0)
-{
-	double Bf, Vf, l, tf, hf2, Nf, Bmiao, Lmiao;
-	int Bdu, Bfen, Ldu, Lfen;
-	y = y - 500000;
-	Bf = hcfansuan(x);
-	Vf = sqrt(1 + e2 / (1 - e2) * cos(Bf) * cos(Bf));
-	tf = tan(Bf);
-	hf2 = e2 / (1 - e2) * cos(Bf) * cos(Bf);
-	Nf = a / sqrt(1 - e2 * sin(Bf) * sin(Bf));
-	BB = (Bf - 0.5 * Vf * Vf * tf * (pow(y / Nf, 2) - 1.0 / 12 * (5 + 3 * tf * tf + hf2 - 9 * hf2 * tf * tf) * pow(y / Nf, 4) + 1.0 / 360 * (61 + 90 * tf * tf + 45 * tf * tf) * pow(y / Nf, 6))) * 180 / PI;
-	Bdu = (int)BB;
-	Bfen = (int)((BB - Bdu) * 60);
-	Bmiao = ((BB - Bdu) * 60 - Bfen) * 60;
-	BB = Bdu + 0.01 * Bfen + 0.0001 * Bmiao;
-	l = 1.0 / cos(Bf) * (y / Nf - 1.0 / 6.0 * (1 + 2 * tf * tf + hf2) * pow(y / Nf, 3) + 1.0 / 120.0 * (5 + 28 * tf * tf + 24 * pow(tf, 4) + 6 * hf2 + 8 * hf2 * tf * tf) * pow(y / Nf, 5)) * 180.0 / PI;
-	LL = L0 + l;
-	Ldu = (int)LL;
-	Lfen = (int)((LL - Ldu) * 60);
-	Lmiao = ((LL - Ldu) * 60 - Lfen) * 60;
-	LL = Ldu + 0.01 * Lfen + 0.0001 * Lmiao;
-}*/
-
-//另一种程序
-	 double a;//'椭球体长半轴
-	 double b;// '椭球体短半轴
-	 double f; //'扁率
-	 double e;// '第一偏心率
-	 double e1; //'第二偏心率
-	 double FE;//'东偏移
-	 double FN;//'北偏移
-	 double L0;//'中央经度
-	 double W0;//'原点纬线
-	 double k0;//'比例因子
-	 double PI = 3.1415926535897932;
-	/**
-	 * 幂函数
-	 * @param e
-	 * @param i
-	 * @return
-	 */
- double MZ(double e, int i)
-	{
-		return pow(e, i);
-	}
-
- void init(int TuoqiuCanshu, double CentralMeridian, double OriginLatitude, double EastOffset, double NorthOffset)
- {
-
-			a = 6378137;
-			b = 6356752.3142;
-		
-
-		f = (a - b) / a;//扁率
-						//e = sqrt(1 - MZ((b / a) ,2));//'第一偏心率
-		e = sqrt(2 * f - MZ(f, 2));//'第一偏心率
-										//eq = sqrt(MZ((a / b) , 2) - 1);//'第二偏心率
-		e1 = e / sqrt(1 - MZ(e, 2));//'第二偏心率
-		L0 = CentralMeridian;//中央经
-		W0 = OriginLatitude;//原点纬线
-		k0 = 1;//'比例因子
-		FE = EastOffset;//东偏移
-		FN = NorthOffset;//北偏移
-	}
-
-	/**
-	 * 高斯投影坐标 转为 经纬度坐标
-	 * @param X 高斯投影坐标X
-	 * @param Y 高斯投影坐标Y
-	 * @return
-	 */
- double resultP[2];// = new double[2];
-	void GKgetJW(double X, double Y)
-	{
-		//'给出高克投影坐标，转换为经纬度坐标
-		
-		double El1 = (1 - sqrt(1 - MZ(e, 2))) / (1 + sqrt(1 - MZ(e, 2)));
-		double Mf = (Y - FN) / k0;//真实坐标值
-		double Q = Mf / (a * (1 - MZ(e, 2) / 4 - 3 * MZ(e, 4) / 64 - 5 * MZ(e, 6) / 256));//角度
-		double Bf = Q + (3 * El1 / 2 - 27 * MZ(El1, 3) / 32) * sin(2 * Q) + (21 * MZ(El1, 2) / 16 - 55 * MZ(El1, 4) / 32) * sin(4 * Q) + (151 * MZ(El1, 3) / 96) * sin(6 * Q) + 1097 / 512 * MZ(El1, 4) * sin(8 * Q);
-		double Rf = a * (1 - MZ(e, 2)) / sqrt(MZ((1 - MZ((e * sin(Bf)), 2)), 3));
-		double Nf = a / sqrt(1 - MZ((e * sin(Bf)), 2));//卯酉圈曲率半径
-		double Tf = MZ((tan(Bf)), 2);
-		double D = (X - FE) / (k0 * Nf);
-		double Cf = MZ(e1, 2) * MZ((cos(Bf)), 2);
-		double B = Bf - Nf * tan(Bf) / Rf * (MZ(D, 2) / 2 - (5 + 3 * Tf + 10 * Cf - 9 * Tf * Cf - 4 * MZ(Cf, 2) - 9 * MZ(e1, 2)) * MZ(D, 4) / 24 + (61 + 90 * Tf + 45 * MZ(Tf, 2) - 256 * MZ(e1, 2) - 3 * MZ(Cf, 2)) * MZ(D, 6) / 720);
-		double L = L0 * PI / 180 + 1 / cos(Bf) * (D - (1 + 2 * Tf + Cf) * MZ(D, 3) / 6 + (5 - 2 * Cf + 28 * Tf - 3 * MZ(Cf, 2) + 8 * MZ(e1, 2) + 24 * MZ(Tf, 2)) * MZ(D, 5) / 120);
-		double Bangle = B * 180 / PI;
-		double Langle = L * 180 / PI;
-		resultP[0] = Langle;//RW * 180 / Math.PI;
-		resultP[1] = Bangle + W0;//RJ * 180 / Math.PI;
-		//return resultP;
-	}
-
 void test()
 {
-	ifstream fin("C:\\Users\\204\\Desktop\\data.txt");
+	ifstream fin("D:\\data\\3-19\\7.obs");
 	string line_info;
-	ofstream fout("result.txt");
-	init(2, 102.5, 0, 500000, 0);
+	ofstream fout("D:\\data\\3-19\\7Result.txt");
+	vector<OBS> vecObsG10;
+	vector<OBS> vecObsG22;
+	vector<OBS> vecObsG25;
+	vector<OBS> vecObsG26;
+	vector<OBS> vecObsG29;
+	vector<OBS> vecObsG31;
+	vector<OBS> vecObsG32;
+	
 	if (fin) // 有该文件
 	{
 		while (getline(fin, line_info)) // line中不包括每行的换行符
 		{
 			string input_result;
-			vector<string> vectorString;
+			vector<string> vecString;
 			stringstream input(line_info);
 			//依次输出到input_result中，并存入vectorString中
 			//cout << "line_info: " << line_info << endl;
 			while (input >> input_result)
-				vectorString.push_back(input_result);//分段保存结果
-			if (vectorString.size() >= 3)
+				vecString.push_back(input_result);//分段保存结果
+			
+			if (vecString[0] == "C12")
 			{
-				//调用转换函数
-				double x = transformData(vectorString[2]), y = transformData(vectorString[3]);
-				//x = 3137245.1060, y = 498899.0800;
-				//GaussNegative(x, y, 102.5);
-				GKgetJW(y, x);
-				//打印结果
-				cout << setiosflags(ios::fixed) << setprecision(8) << resultP[0]<< ", " << resultP[1] << endl;
-				//输出结果保存到文件
-				fout << setiosflags(ios::fixed) << setprecision(8)  << resultP[0] << ", " << resultP[1] << endl;
-
+				OBS obs(vecString[1], vecString[2], vecString[3], vecString[4]);
+				vecObsG10.push_back(obs);
 			}
+			if (vecString[0] == "C10")
+			{
+				OBS obs(vecString[1], vecString[2], vecString[3], vecString[4]);
+				vecObsG22.push_back(obs);
+			}
+			if (vecString[0] == "G13")
+			{
+				OBS obs(vecString[1], vecString[2], vecString[3], vecString[4]);
+				vecObsG25.push_back(obs);
+			}
+			if (vecString[0] == "G12")
+			{
+				OBS obs(vecString[1], vecString[2], vecString[3], vecString[4]);
+				vecObsG26.push_back(obs);
+			}
+			if (vecString[0] == "C21")
+			{
+				OBS obs(vecString[1], vecString[2], vecString[3], vecString[4]);
+				vecObsG29.push_back(obs);
+			}
+			if (vecString[0] == "G17")
+			{
+				OBS obs(vecString[1], vecString[2], vecString[3], vecString[4]);
+				vecObsG31.push_back(obs);
+			}
+			if (vecString[0] == "G19")
+			{
+				OBS obs(vecString[1], vecString[2], vecString[3], vecString[4]);
+				vecObsG32.push_back(obs);
+			}
+		}
+		//写入文件
+		for (int i = 0; i < vecObsG10.size(); i++)
+		{
+			string str = vecObsG10[i].D + "," + vecObsG22[i].D + ","+vecObsG25[i].D + ","+vecObsG26[i].D + "," + vecObsG29[i].D + "," + vecObsG31[i].D + "," + vecObsG32[i].D;
+			fout<<str<<endl;
 		}
 		fout.close();
 	}

@@ -267,7 +267,7 @@ static int rescode(int iter, const obsd_t *obs, int n, const double *rs,
                       iter>0?opt->tropopt:TROPOPT_SAAS,&dtrp,&vtrp)) {
             continue;
         }
-        /* pseudorange residual */
+        /* pseudorange residual *///伪距残差
         v[nv]=P-(r+dtr-CLIGHT*dts[i*2]+dion+dtrp);
         
         /* design matrix */
@@ -358,7 +358,8 @@ static int estpos(const obsd_t *obs, int n, const double *rs, const double *dts,
             for (k=0;k<NX;k++) H[k+j*NX]/=sig;
         }
         /* least square estimation */
-        if ((info=lsq(H,v,NX,nv,dx,Q))) {
+        if ((info=lsq(H,v,NX,nv,dx,Q))) //if ((info = test_lsq(H, v, NX, nv, dx, Q)))
+        {
             sprintf(msg,"lsq error info=%d",info);
             break;
         }
@@ -469,8 +470,9 @@ static int raim_fde(const obsd_t *obs, int n, const double *rs,
     free(svh_e); free(vsat_e); free(resp_e);
     return stat;
 }
+
 /* doppler residuals ---------------------------------------------------------*/
-static int resdop(const obsd_t *obs, int n, const double *rs, const double *dts,
+static int resdop(obsd_t *obs, int n, const double *rs, const double *dts,
                   const nav_t *nav, const double *rr, const double *x,
                   const double *azel, const int *vsat, double *v, double *H)
 {
@@ -480,8 +482,10 @@ static int resdop(const obsd_t *obs, int n, const double *rs, const double *dts,
     trace(3,"resdop  : n=%d\n",n);
     
     ecef2pos(rr,pos); xyz2enu(pos,E);
-    
-    for (i=0;i<n&&i<MAXOBS;i++) {
+    static double lastEpoth[8] = { 0 };
+    //计算一个历元里面所有的卫星
+    for (i = 0; i < n && i < MAXOBS; i++)
+    {
         
         lam=nav->lam[obs[i].sat-1][0];
         
@@ -493,23 +497,57 @@ static int resdop(const obsd_t *obs, int n, const double *rs, const double *dts,
         a[0]=sin(azel[i*2])*cosel;
         a[1]=cos(azel[i*2])*cosel;
         a[2]=sin(azel[1+i*2]);
+        
         matmul("TN",3,1,3,1.0,E,a,0.0,e);
         
         /* satellite velocity relative to receiver in ecef */
         for (j=0;j<3;j++) vs[j]=rs[j+3+i*6]-x[j];
         
         /* range rate with earth rotation correction */
-        rate=dot(vs,e,3)+OMGE/CLIGHT*(rs[4+i*6]*rr[0]+rs[1+i*6]*x[0]-
-                                      rs[3+i*6]*rr[1]-rs[  i*6]*x[1]);
-        
+        //double a = dot(vs, e, 3),b= rs[4 + i * 6],c= rs[1 + i * 6], d = rs[3 + i * 6],f= rs[i * 6];
+        //rate~=dot=Vs*I
+        //rate=dot(vs,e,3)+OMGE/CLIGHT*(rs[4+i*6]*rr[0]+rs[1+i*6]*x[0]-rs[3+i*6]*rr[1]-rs[  i*6]*x[1]);
+        rate = dot(vs, e, 3);
+#if 0  
+        //重构多普勒，接收机速度静止不动为0；fd=(vu-vs)*e/lam;
+        float fd = -(vs[0] * e[0] + vs[1] * e[1] + vs[2] * e[2]) / lam;
+        //使用TDCP的方法
+        /*float fd = -1.0*(obs[i].L[0] - lastEpoth[i]);        
+        lastEpoth[i] = obs[i].L[0];*/
+        trace(2, "delta f = %f,Reconstructed fd = %f,orininal fd=%f.\n", fd - obs[i].D[0], fd, obs[i].D[0]);
         /* doppler residual */
+        v[nv] = -lam * fd - (rate + x[3] - CLIGHT * dts[1 + i * 2]);
+#else
+        /* doppler residual */
+        double a= x[3], b= CLIGHT * dts[1 + i * 2],c= -lam * obs[i].D[0],d=rate;
+        double f = c - (d + a - b);
         v[nv]=-lam*obs[i].D[0]-(rate+x[3]-CLIGHT*dts[1+i*2]);
-        
+#endif
         /* design matrix */
-        for (j=0;j<4;j++) H[j+nv*4]=j<3?-e[j]:1.0;
+        for (j=0;j<4;j++) H[j+nv*4]=j<3?-e[j]:1.0;//e的前面有个负号
         
         nv++;
+        //add by lw
+        if (obs->rcv == 1)
+        {
+            memcpy(&obs->Ir[i*3], e, 3 * sizeof(double));
+        }
+        else if (obs->rcv == 2)
+        {
+            memcpy(&obs->Ib[i * 3], e, 3 * sizeof(double));
+        }
+        memcpy(&obs->Vs[i * 3], vs, 3 * sizeof(double));
+        if (obs->rcv == 1)
+        {
+            obs->Fr[i] = lam * obs[i].D[0];// -CLIGHT * dts[1 + i * 2];
+        }
+        else if (obs->rcv == 2)
+        {
+            obs->Fb[i] = lam * obs[i].D[0];// -CLIGHT * dts[1 + i * 2];
+        }
+        obs->lam = lam;
     }
+    //add by lw
     return nv;
 }
 /* estimate receiver velocity ------------------------------------------------*/
@@ -532,10 +570,12 @@ static void estvel(const obsd_t *obs, int n, const double *rs, const double *dts
         }
         /* least square estimation */
         if (lsq(H,v,4,nv,dx,Q)) break;
+        //if (test_lsq(H, v, 4, nv, dx, Q)) break;
         
         for (j=0;j<4;j++) x[j]+=dx[j];
         
-        if (norm(dx,4)<1E-6) {
+        if (norm(dx,4)<1E-6) 
+        {
             for (i=0;i<3;i++) sol->rr[i+3]=x[i];
             break;
         }
@@ -626,3 +666,4 @@ extern int pntpos(const obsd_t *obs, int n, const nav_t *nav,
     free(rs); free(dts); free(var); free(azel_); free(resp);
     return stat;
 }
+

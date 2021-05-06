@@ -1913,6 +1913,7 @@ static void outobstype_ver3(FILE *fp, const rnxopt_t *opt)
 *-----------------------------------------------------------------------------*/
 extern int outrnxobsh(FILE *fp, const rnxopt_t *opt, const nav_t *nav)
 {
+#if 0
     const char *glo_codes[]={"C1C","C1P","C2C","C2P"};
     double ep[6],pos[3]={0},del[3]={0};
     int i,j,k,n,prn[MAXPRNGLO];
@@ -2010,6 +2011,7 @@ extern int outrnxobsh(FILE *fp, const rnxopt_t *opt, const nav_t *nav)
         fprintf(fp,"%8s%-20s\n","","GLONASS COD/PHS/BIS");
     }
     return fprintf(fp,"%-60.60s%-20s\n","","END OF HEADER")!=EOF;
+#endif
 }
 /* output obs data field -----------------------------------------------------*/
 static void outrnxobsf(FILE *fp, double obs, int lli, int qual)

@@ -478,7 +478,7 @@ static void initx(rtk_t *rtk, double xi, double var, int i)
     int j;
     rtk->x[i]=xi;
     for (j=0;j<rtk->nx;j++) {
-        rtk->P[i+j*rtk->nx]=rtk->P[j+i*rtk->nx]=i==j?var:0.0;
+        rtk->P[i+j*rtk->nx]=rtk->P[j+i*rtk->nx]=i==j?var:0.0;//改变了对角线元素
     }
 }
 /* select common satellites between rover and reference station --------------*/
@@ -512,49 +512,76 @@ static void udpos(rtk_t *rtk, double tt)
         for (i=0;i<3;i++) initx(rtk,rtk->opt.ru[i],1E-8,i);
         return;
     }
+    //初始历元
     /* initialize position for first epoch */
-    if (norm(rtk->x,3)<=0.0) {
+    if (norm(rtk->x,3)<=0.0) 
+    {
         for (i=0;i<3;i++) initx(rtk,rtk->sol.rr[i],VAR_POS,i);
-        if (rtk->opt.dynamics) {
+        //完全动态模式
+        if (rtk->opt.dynamics) 
+        {
             for (i=3;i<6;i++) initx(rtk,rtk->sol.rr[i],VAR_VEL,i);
             for (i=6;i<9;i++) initx(rtk,1E-6,VAR_ACC,i);
         }
     }
+    //静态模式
     /* static mode */
-    if (rtk->opt.mode==PMODE_STATIC) 
-        return;
-    
-    /* kinmatic mode without dynamics */
-    if (!rtk->opt.dynamics) {
-        for (i=0;i<3;i++) initx(rtk,rtk->sol.rr[i],VAR_POS,i);
+    if (rtk->opt.mode == PMODE_STATIC)
+    { 
         return;
     }
+    
+    //非完全动态模式
+    /* kinmatic mode without dynamics */
+    if (!rtk->opt.dynamics) 
+    {
+        //动态模式下，初始位置重新初始化，为每个历元的单点定位坐标
+        //todo：用别的更加准确的方法
+        //sol.rr[i]由伪距单点定位得到
+        for (i=0;i<3;i++) initx(rtk,rtk->sol.rr[i],VAR_POS,i); 
+        //test
+#if 0
+        if (rtk->sol.solStat == SOLQ_FIX)
+        {
+            for (i = 0; i < 3; i++)
+            {
+                //速度不够准确
+                rtk->x[i] = rtk->xa[i] + rtk->sol.rr[i + 3] * tt;
+            }
+        }
+#endif
+
+        return;
+    }
+    //动态模式，有速度和加速度
     /* check variance of estimated position */
     for (i=0;i<3;i++) var+=rtk->P[i+i*rtk->nx];
     var/=3.0;
-    
-    if (var>VAR_POS) {
+    //估计的位置方差太大，重新初始化
+    if (var>VAR_POS) 
+    {
         /* reset position with large variance */
-        for (i=0;i<3;i++) initx(rtk,rtk->sol.rr[i],VAR_POS,i);
-        for (i=3;i<6;i++) initx(rtk,rtk->sol.rr[i],VAR_VEL,i);
-        for (i=6;i<9;i++) initx(rtk,1E-6,VAR_ACC,i);
+        for (i=0;i<3;i++) initx(rtk,rtk->sol.rr[i],VAR_POS,i);//位置-伪距单点定位
+        for (i=3;i<6;i++) initx(rtk,rtk->sol.rr[i],VAR_VEL,i);//速度-多普勒测速
+        for (i=6;i<9;i++) initx(rtk,1E-6,VAR_ACC,i);//加速度-10~-6
         trace(2,"reset rtk position due to large variance: var=%.3f\n",var);
         return;
     }
     /* generate valid state index */
     ix=imat(rtk->nx,1);
-    for (i=nx=0;i<rtk->nx;i++) {
+    for (i=nx=0;i<rtk->nx;i++) 
+    {
         if (i<9||(rtk->x[i]!=0.0&&rtk->P[i+i*rtk->nx]>0.0)) ix[nx++]=i;
     }
     /* state transition of position/velocity/acceleration */
     F=eye(nx); P=mat(nx,nx); FP=mat(nx,nx); x=mat(nx,1); xp=mat(nx,1);
     for (i=0;i<6;i++) {
-        F[i+(i+3)*nx]=tt;
+        F[i+(i+3)*nx]=tt;//3-6:速度
     }
-    /* include accel terms if filter is converged */
+    /* include accel terms if filter is converged *///converged:收敛，聚合
     if (var<rtk->opt.thresar[1]) {
         for (i=0;i<3;i++) {
-            F[i+(i+6)*nx]=SQR(tt)/2.0;
+            F[i+(i+6)*nx]=SQR(tt)/2.0;//6-9:加速度=1/2 * t^2
         }
     }
     else trace(3,"pos var too high for accel term\n");
@@ -564,11 +591,11 @@ static void udpos(rtk_t *rtk, double tt)
             P[i+j*nx]=rtk->P[ix[i]+ix[j]*rtk->nx];
         }
     }
-    /* x=F*x, P=F*P*F'+Q *///卡尔曼的时间更新公式
+    /* x=F*x, P=F*P*F'+Q *///卡尔曼的预测公式
     double* P1 = mat(nx, nx);
     int ret;
     matcpy(P1, P, nx, nx);
-
+    //matfprint(F, nx, nx, 4, 2, stdout);
     /*fprintf(stderr, "P1:\n");
     ret=memcmp(P1,P,nx*nx);
     matfprint(P, nx, nx, 4, 2, stdout);*/
@@ -598,7 +625,7 @@ static void udpos(rtk_t *rtk, double tt)
     ecef2pos(rtk->x,pos);
     covecef(pos,Q,Qv);
     for (i=0;i<3;i++) for (j=0;j<3;j++) {
-        rtk->P[i+6+(j+6)*rtk->nx]+=Qv[i+j*3];
+        rtk->P[i+6+(j+6)*rtk->nx]+=Qv[i+j*3];//加上预测公式里面最后的噪声Q
     }
     free(ix); free(F); free(P); free(FP); free(x); free(xp);
 }
@@ -968,6 +995,7 @@ static void udstate(rtk_t *rtk, const obsd_t *obs, const int *sat,
     
     trace(3,"udstate : ns=%d\n",ns);
     
+    //kalman的预测
     /* temporal update of position/velocity/acceleration */
     udpos(rtk,tt);
     
@@ -976,7 +1004,7 @@ static void udstate(rtk_t *rtk, const obsd_t *obs, const int *sat,
          (rtk->opt.ionoopt == IONOOPT_QZS) || (rtk->opt.ionoopt == IONOOPT_LEX) ||
          (rtk->opt.ionoopt == IONOOPT_STEC) ) 
     {
-        bl=baseline(rtk->x,rtk->rb,dr);
+        bl=baseline(rtk->x,rtk->rb,dr);//计算基线向量
         udion(rtk,tt,bl,sat,ns);
     }
     /* temporal update of tropospheric parameters */
@@ -987,6 +1015,7 @@ static void udstate(rtk_t *rtk, const obsd_t *obs, const int *sat,
     if (rtk->opt.glomodear==GLO_ARMODE_AUTOCAL&&(rtk->opt.navsys&SYS_GLO)) {
         udrcvbias(rtk,tt);
     }
+    //从obs观测值初始化相位
     /* temporal update of phase-bias */
     if (rtk->opt.mode>PMODE_DGPS) {
         udbias(rtk,tt,obs,sat,iu,ir,ns,nav);
@@ -999,7 +1028,7 @@ static void zdres_sat(int base, double r, const obsd_t *obs, const nav_t *nav,
 {
     const double *lam=nav->lam[obs->sat-1];
     double f1,f2,C1,C2,dant_if;
-    int i,nf=NF(opt);
+    int i,nf=NF(opt);//nf=1
     
     if (opt->ionoopt==IONOOPT_IFLC) { /* iono-free linear combination */
         if (lam[0]==0.0||lam[1]==0.0) return;
@@ -1029,6 +1058,8 @@ static void zdres_sat(int base, double r, const obsd_t *obs, const nav_t *nav,
                 continue;
             }
             /* residuals = observable - estimated range */
+            //这里的估计值是单点定位坐标加上几种测量误差
+            //y是单个站对于单个卫星观测数据的残差
             if (obs->L[i]!=0.0) y[i   ]=obs->L[i]*lam[i]-r-dant[i];
             if (obs->P[i]!=0.0) y[i+nf]=obs->P[i]       -r-dant[i];
         }
@@ -1081,7 +1112,7 @@ static int zdres(int base, const obsd_t *obs, int n, const double *rs,
     /* loop through satellites */
     for (i=0;i<n;i++) {
         /* compute geometric-range and azimuth/elevation angle */
-        if ((r=geodist(rs+i*6,rr_,e+i*3))<=0.0) continue;//r时站星距
+        if ((r=geodist(rs+i*6,rr_,e+i*3))<=0.0) continue;//r是站星距
         if (satazel(pos,e+i*3,azel+i*2)<opt->elmin) continue;
         
         /* excluded satellite? */
@@ -1302,9 +1333,9 @@ static int ddres(rtk_t *rtk, const nav_t *nav, const obsd_t *obs, double dt, con
     for (m=0;m<5;m++) { 
 
         /* step through phases/codes */
-        for (f=opt->mode>PMODE_DGPS?0:nf;f<nf*2;f++) 
+        for (f=opt->mode>PMODE_DGPS?0:nf;f<nf*2;f++) //f=0,nf=1,0<2,要循环2次
         {
-            frq=f%nf;code=f<nf?0:1;
+            frq=f%nf;code=f<nf?0:1;//code=0,1
 
             //寻找仰角最高的参考卫星,为sat[i]
             /* find reference satellite with highest elevation, set to i */
@@ -1336,17 +1367,30 @@ static int ddres(rtk_t *rtk, const nav_t *nav, const obsd_t *obs, double dt, con
             
                 //用传入的没有差分的相位/码残差y计算双差残差v，并计算对应的H
                 /* double-differenced measurements from 2 receivers and 2 sats in meters */
-                //v[nv]=(y[f+iu[i]*nf*2]-y[f+ir[i]*nf*2])-(y[f+iu[j]*nf*2]-y[f+ir[j]*nf*2]);
+                v[nv]=(y[f+iu[i]*nf*2]-y[f+ir[i]*nf*2])-(y[f+iu[j]*nf*2]-y[f+ir[j]*nf*2]);
+                //test
+                if (!code)
+                {
+                    trace(3, "y=\n");
+                    tracemat(3, y, 4, ns, 7, 4);
+                }
+                else
+                {
+                    trace(3, "y=\n");
+                    tracemat(3, y, 4, ns, 7, 4);
+                }
                 double a, bb, c, d,ee,ff;
-                a = y[f + iu[i] * nf * 2];
-                bb = y[f + ir[i] * nf * 2];
-                c = y[f + iu[j] * nf * 2];
-                d = y[f + ir[j] * nf * 2];
-                ee = (a - bb);
-                ff = (c - d);
-                v[nv] = ee - ff;
+                a = y[f + iu[i] * nf * 2];//移动站-参考卫星--phase-zdres
+                bb = y[f + ir[i] * nf * 2];//基准站-参考卫星--phase-zdres
+                c = y[f + iu[j] * nf * 2];//移动站-其他卫星-phase-zdres
+                d = y[f + ir[j] * nf * 2];//基准站-其他卫星--phase-zdres
+                ee = (a - bb);//站间差分
+                ff = (c - d);//站间差分
+                //v[nv] = ee - ff;//星间差分
+                //end of test
                 /* partial derivatives by rover position, combine unit vectors from two sats */
-                if (H) {
+                if (H) 
+                {
                     for (k=0;k<3;k++) 
                     {
                         double a = -e[k + iu[i] * 3];
@@ -1363,13 +1407,17 @@ static int ddres(rtk_t *rtk, const nav_t *nav, const obsd_t *obs, double dt, con
                     //用相位双差来修正v和H
                     /* adjust phase residual by double-differenced phase-bias term,
                           IB=look up index by sat&freq */
-                    if (opt->ionoopt != IONOOPT_IFLC) {
+                    if (opt->ionoopt != IONOOPT_IFLC) 
+                    {
+                        //从观测值里面直接得到的单差值
                         /* phase-bias states are single-differenced so need to difference them */
                         int a = IB(sat[i], frq, opt);
                         int b = IB(sat[j], frq, opt);
-                        double c = x[a], d = x[b];
+                        double c = x[a];//参考卫星的相位
+                        double d = x[b];//其他卫星的相位
                         //修正V和H，由于是单频，所以lami与lamj相等
-                        v[nv] -= lami * (c-d);
+                        //v: innovation=measurement - model
+                        v[nv] = v[nv] - lami * (c-d);
                         //v[nv] -= lami * x[IB(sat[i], frq, opt)] - lamj * x[IB(sat[j], frq, opt)];
                         if (H) {
                             Hi[IB(sat[i], frq, opt)] = lami;
@@ -1377,6 +1425,7 @@ static int ddres(rtk_t *rtk, const nav_t *nav, const obsd_t *obs, double dt, con
                         }
                     }
                     else {
+                        //伪距
                         v[nv] -= x[IB(sat[i], frq, opt)] - x[IB(sat[j], frq, opt)];
                         if (H) {
                             Hi[IB(sat[i], frq, opt)] = 1.0;
@@ -1384,7 +1433,7 @@ static int ddres(rtk_t *rtk, const nav_t *nav, const obsd_t *obs, double dt, con
                         }
                     }
                 }
-#if 0
+#if 1
                 //若要估计电离层参数，模式IONOOPT_EST，用电离层延迟因子修正v和H
                 if (opt->ionoopt==IONOOPT_EST) {
                     /* adjust double-differenced measurements by double-differenced ionospheric delay term */
@@ -1491,30 +1540,6 @@ static int ddres(rtk_t *rtk, const nav_t *nav, const obsd_t *obs, double dt, con
 
     }    /* end of system loop */
     
-#if 0
-    //test
-    if (H == NULL && P != NULL)//限定为验后残差的ddres
-    {
-        //if (fabs(v[nv] > 1) && f < nf)//参数1可以自定义，作为阈值
-        double a = fabs(v[nv]);
-        if (a > 1)
-        {
-            rtk->opt.exsats[sat[j - 1]] = 1;//排除非参考星i外的卫星j
-        }
-    }
-    if (H == NULL && P == NULL)//限定为模糊度固定后的ddres
-    {
-        //通过（大于0.1的个数）和（所有载波方程的个数*1/2）的关系可以甄别出是飞点
-        //如果是飞点，建议重置模糊度
-        //if (fabs(v[nv] > 0.1) && f < nf)
-        double a = fabs(v[nv]);
-        if (a > 0.1)
-        {
-            int fpcnt = 0;
-            fpcnt++;
-        }
-    }
-#endif
     /* baseline length constraint for moving baseline */
     if (opt->mode==PMODE_MOVEB&&constbl(rtk,x,P,v,H,Ri,Rj,nv)) {
         vflg[nv++]=3<<4;
@@ -1686,8 +1711,10 @@ static void holdamb(rtk_t *rtk, const double *xa)
                 continue;
             }
             index[n++]=IB(i+1,f,&rtk->opt);
-            rtk->ssat[i].fix[f]=3; /* hold */
+            rtk->ssat[i].fix[f]=3; /*ambiguity fix flag= hold */
         }
+        //单差转双差
+        //xa是固定解的状态向量
         /* use ambiguity resolution results to generate a set of pseudo-innovations
                 to feed to kalman filter based on error between fixed and float solutions */
         for (i=1;i<n;i++) {
@@ -2044,9 +2071,8 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
     /* compute satellite positions, velocities and clocks */
     satposs(time,obs,n,nav,opt->sateph,rs,dts,var,svh);
     
-    /* calculate [range - measured pseudorange] for base station (phase and code)
-         output is in y[nu:nu+nr], see call for rover below for more details                                                 */
     trace(3,"base station:\n");
+    /* UD (undifferenced) residuals for base station */
     if (!zdres(1,obs+nu,nr,rs+nu*6,dts+nu*2,var+nu,svh+nu,nav,rtk->rb,opt,1,
                y+nu*nf*2,e+nu*3,azel+nu*2)) {
         errmsg(rtk,"initial base station position error\n");
@@ -2066,10 +2092,13 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
         free(rs); free(dts); free(var); free(y); free(e); free(azel);
         return 0;
     }
+    //卡尔曼的预测，有卫星位置和卫星的初始相位
+    //X(k)=AX(k-1)+BU(k-1)
+    //P(k)=AP(k-1)A'+Q
     /* update kalman filter states (pos,vel,acc,ionosp, troposp, sat phase biases) */
     udstate(rtk,obs,sat,iu,ir,ns,nav);
     
-    trace(4,"x(0)="); tracemat(4,rtk->x,1,NR(opt),13,4);
+    trace(4,"x(0)="); tracemat(4,rtk->x,1,NR(opt),7,4);
     
     for (i=0;i<ns;i++) for (j=0;j<nf;j++) {
         
@@ -2080,6 +2109,10 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
     
     /* initialize Pp,xa to zero, xp to rtk->x */
     xp=mat(rtk->nx,1); Pp=zeros(rtk->nx,rtk->nx); xa=mat(rtk->nx,1);
+    //test
+    //double test[105];
+    //memcpy(test,rtk->x,105*sizeof(double));
+    //tracemat(3, rtk->x, 1, rtk->nx, 13, 3);
     matcpy(xp,rtk->x,rtk->nx,1);
     
     ny=ns*nf*2+2;
@@ -2089,20 +2122,8 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
     niter=opt->niter+(opt->mode==PMODE_MOVEB&&opt->baseline[0]>0.0?2:0);
     
     for (i=0;i<niter;i++) {
-        /* calculate zero diff residuals [range - measured pseudorange] for rover (phase and code)
-            output is in y[0:nu-1], only shared input with base is nav 
-                obs  = sat observations
-                nu   = # of sats
-                rs   = range to sats
-                dts  = sat clock biases (rover)
-                svh  = sat health flags
-                nav  = sat nav data
-                xp   = kalman states
-                opt  = options
-                y    = zero diff residuals (code and phase)
-                e    = line of sight unit vectors to sats
-                azel = [az, el] to sats                                   */
         trace(3,"rover:\n");
+        /* UD (undifferenced) residuals for rover */
         if (!zdres(0,obs,nu,rs,dts,var,svh,nav,xp,opt,0,y,e,azel)) {
             errmsg(rtk,"rover initial position error\n");
             stat=SOLQ_NONE;
@@ -2131,6 +2152,9 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
                 K=P*H*(H'*P*H+R)^-1
                 xp=x+K*v
                 Pp=(I-K*H')*P                  */
+        //test
+        trace(4, "P=\n");
+        tracemat(4, rtk->P, rtk->nx, rtk->nx, 7, 4);
         matcpy(Pp,rtk->P,rtk->nx,rtk->nx);
         if ((info=filter(xp,Pp,H,v,R,rtk->nx,nv))) {
             errmsg(rtk,"filter error (info=%d)\n",info);
@@ -2146,6 +2170,7 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
     if (stat!=SOLQ_NONE&&zdres(0,obs,nu,rs,dts,var,svh,nav,xp,opt,0,y,e,azel)) {
         
         /* calc double diff residuals again after kalman filter update for float solution */
+        //浮点解双差后，进行固定解计算
         nv=ddres(rtk,nav,obs,dt,xp,Pp,sat,y,e,azel,iu,ir,ns,v,NULL,R,vflg);
         
         /* validation of float solution, always returns 1, msg to trace file if large residual */
@@ -2167,22 +2192,8 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
         }
         else stat=SOLQ_NONE;
     }
-    /* NOT SUPPORTED: resolve integer ambiguity by WL-NL */
-    if (stat!=SOLQ_NONE&&rtk->opt.modear==ARMODE_WLNL) {
-        
-        if (resamb_WLNL(rtk,obs,sat,iu,ir,ns,nav,azel)) {
-            stat=SOLQ_FIX;
-        }
-    }
-    /* NOT SUPPORTED: resolve integer ambiguity by TCAR */
-    else if (stat!=SOLQ_NONE&&rtk->opt.modear==ARMODE_TCAR) {
-        
-        if (resamb_TCAR(rtk,obs,sat,iu,ir,ns,nav,azel)) {
-            stat=SOLQ_FIX;
-        }
-    }
-    /* else resolve integer ambiguity by LAMBDA */
-    else if (stat!=SOLQ_NONE) {
+    if (stat!=SOLQ_NONE) 
+    {
         /* if valid fixed solution, process it */
         if (manage_amb_LAMBDA(rtk,bias,xa,sat,nf,ns)>1) {
     
@@ -2198,7 +2209,7 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
                     /* hold integer ambiguity if meet minfix count */
                     if (++rtk->nfix>=rtk->opt.minfix) {
                         if (rtk->opt.modear==ARMODE_FIXHOLD||rtk->opt.glomodear==GLO_ARMODE_FIXHOLD) 
-                            holdamb(rtk,xa);
+                            holdamb(rtk,xa);//固定模糊度通过ekf传递信息到下一个历元
                         /* switch to kinematic after qualify for hold if in static-start mode */
                         if (rtk->opt.mode==PMODE_STATIC_START) {
                             rtk->opt.mode=PMODE_KINEMA;
@@ -2214,7 +2225,7 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
     /* save solution status (fixed or float) */
     if (stat==SOLQ_FIX) {
         for (i=0;i<3;i++) {
-            rtk->sol.rr[i]=rtk->xa[i];
+            rtk->sol.rr[i]=rtk->xa[i];//把固定解的接收机坐标复制到sol里面
             rtk->sol.qr[i]=(float)rtk->Pa[i+i*rtk->na];
         }
         rtk->sol.qr[3]=(float)rtk->Pa[1];
@@ -2268,8 +2279,12 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
     }
     free(rs); free(dts); free(var); free(y); free(e); free(azel);
     free(xp); free(Pp);  free(xa);  free(v); free(H); free(R); free(bias);
-    
-    if (stat!=SOLQ_NONE) rtk->sol.stat=stat;
+
+    if (stat != SOLQ_NONE)
+    {
+        rtk->sol.stat = stat;
+        rtk->sol.solStat = stat;
+    }
     
     return stat!=SOLQ_NONE;
 }
@@ -2290,8 +2305,10 @@ extern void rtkinit(rtk_t *rtk, const prcopt_t *opt)
     
     rtk->sol=sol0;
     for (i=0;i<6;i++) rtk->rb[i]=0.0;
-    rtk->nx=opt->mode<=PMODE_FIXED?NX(opt):pppnx(opt);
-    rtk->na=opt->mode<=PMODE_FIXED?NR(opt):pppnx(opt);
+    int a = NX(opt);
+    int b = NR(opt);
+    rtk->nx=opt->mode<=PMODE_FIXED?NX(opt):pppnx(opt);//number of float states()
+    rtk->na=opt->mode<=PMODE_FIXED?NR(opt):pppnx(opt);//number of fixed states(0:6:9)
     rtk->tt=0.0;
     rtk->x=zeros(rtk->nx,1);
     rtk->P=zeros(rtk->nx,rtk->nx);
@@ -2391,7 +2408,7 @@ extern int rtkpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
     gtime_t time;
     int i,nu,nr;
     char msg[128]="";
-    
+    int sppStatus=0; //(1:ok, 0 : error)
     trace(3,"rtkpos  : time=%s n=%d\n",time_str(obs[0].time,3),n);
     trace(4,"obs=\n"); traceobs(4,obs,n);
     /*trace(5,"nav=\n"); tracenav(5,nav);*/
@@ -2407,8 +2424,18 @@ extern int rtkpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
     
     time=rtk->sol.time; /* previous epoch */
     
+#if 0
+    //add by lw
+    /* estimate position/velocity of base station */
+    sppStatus = pntpos(obs + nu, nr, nav, &rtk->opt, &solb, NULL, NULL, msg);
+    if (!sppStatus) {
+        errmsg(rtk, "base station position error (%s)\n", msg);
+        return 0;
+    }
+#endif
     /* rover position by single point positioning */
-    if (!pntpos(obs,nu,nav,&rtk->opt,&rtk->sol,NULL,rtk->ssat,msg)) {
+    sppStatus = pntpos(obs, nu, nav, &rtk->opt, &rtk->sol, NULL, rtk->ssat, msg);
+    if (!sppStatus) {
         errmsg(rtk,"point pos error (%s)\n",msg);
         
         if (!rtk->opt.dynamics) {
@@ -2416,10 +2443,19 @@ extern int rtkpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
             return 0;
         }
     }
+#if 0
+    //estvel by new method
+    double x[4] = { 0 };
+    if (sppStatus)
+    {
+        testVel(obs->Ir, (obs + nu)->Ib, obs->Vs, obs->Fr, (obs + nu)->Fb, &x, nr, obs->lam);
+        for (i = 0; i < 3; i++) rtk->sol.rr[i + 3] = x[i];
+    }
+#endif
     if (time.time!=0) rtk->tt=timediff(rtk->sol.time,time);
-        
+    
     /* return to static start if long delay without rover data */
-    if (fabs(rtk->tt)>300&&rtk->initial_mode==PMODE_STATIC_START) {
+    /*if (fabs(rtk->tt)>300&&rtk->initial_mode==PMODE_STATIC_START) {
         rtk->opt.mode=PMODE_STATIC_START;
         for (i=0;i<3;i++) initx(rtk,rtk->sol.rr[i],VAR_POS,i);
         if (rtk->opt.dynamics) {
@@ -2427,7 +2463,7 @@ extern int rtkpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
             for (i=6;i<9;i++) initx(rtk,1E-6,VAR_ACC,i);
         }
         trace(3,"No data for > 5 min: switch back to static mode:\n");
-    }
+    }*/
 
     /* single point positioning */
     if (opt->mode==PMODE_SINGLE) {
