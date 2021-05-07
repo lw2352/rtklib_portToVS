@@ -531,7 +531,7 @@ static void udpos(rtk_t *rtk, double tt)
         return;
     }
     
-    //非完全动态模式
+    //动态模式，但仅仅是初始坐标由单点定位得到
     /* kinmatic mode without dynamics */
     if (!rtk->opt.dynamics) 
     {
@@ -540,7 +540,7 @@ static void udpos(rtk_t *rtk, double tt)
         //sol.rr[i]由伪距单点定位得到
         for (i=0;i<3;i++) initx(rtk,rtk->sol.rr[i],VAR_POS,i); 
         //test
-#if 0
+#if 1
         if (rtk->sol.solStat == SOLQ_FIX)
         {
             for (i = 0; i < 3; i++)
@@ -2086,12 +2086,37 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
         dt=intpres(time,obs+nu,nr,nav,rtk,y+nu*nf*2);
     }
     /* select common satellites between rover and base-station */
+    //选择共视卫星
     if ((ns=selsat(obs,azel,nu,nr,opt,sat,iu,ir))<=0) {
         errmsg(rtk,"no common satellite\n");
         
         free(rs); free(dts); free(var); free(y); free(e); free(azel);
         return 0;
     }
+#if 1
+    //estvel by new method
+    double vel[4] = { 0 };
+    double* Ir_in, * Ib_in, * Vs_in, * Fr_in, * Fb_in;
+    Ir_in = zeros(ns,3);
+    Ib_in = zeros(ns, 3);
+    Vs_in = zeros(ns, 3);
+    Fr_in = zeros(ns, 1);
+    Fb_in = zeros(ns, 1);
+    
+    for (int i = 0; i < ns; i++)
+    {
+        memcpy(&Ir_in[3*i], &obs[iu[i]].Ir,3*sizeof(double));
+        memcpy(&Ib_in[3 * i], &obs[ir[i]].Ib, 3 * sizeof(double));
+        memcpy(&Vs_in[3 * i], &obs[iu[i]].Vs, 3 * sizeof(double));
+
+        Fr_in[i] = obs[iu[i]].Fr;
+        Fb_in[i] = obs[ir[i]].Fb;
+    }
+    //tracemat(2, Ir_in, 3, ns, 4, 3);
+    //tracemat(2, Ib_in, 3, ns, 4, 3);
+    testVel(Ir_in, Ib_in, Vs_in, Fr_in, Fb_in, &vel, ns, obs->lam);
+    for (i = 0; i < 3; i++) rtk->sol.rr[i + 3] = vel[i];
+#endif
     //卡尔曼的预测，有卫星位置和卫星的初始相位
     //X(k)=AX(k-1)+BU(k-1)
     //P(k)=AP(k-1)A'+Q
@@ -2112,7 +2137,7 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
     //test
     //double test[105];
     //memcpy(test,rtk->x,105*sizeof(double));
-    //tracemat(3, rtk->x, 1, rtk->nx, 13, 3);
+    //tracemat(3, rtk->x, 1, rtk->nx, 4, 3);
     matcpy(xp,rtk->x,rtk->nx,1);
     
     ny=ns*nf*2+2;
@@ -2419,12 +2444,22 @@ extern int rtkpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
         for (i=0;i<6;i++) rtk->rb[i]=i<3?opt->rb[i]:0.0;
     }
     /* count rover/base station observations */
-    for (nu=0;nu   <n&&obs[nu   ].rcv==1;nu++) ;
-    for (nr=0;nu+nr<n&&obs[nu+nr].rcv==2;nr++) ;
+    for (nu=0;nu   <n&&obs[nu   ].rcv==1;nu++) ;//rover
+    for (nr=0;nu+nr<n&&obs[nu+nr].rcv==2;nr++) ;//base
     
     time=rtk->sol.time; /* previous epoch */
     
-#if 0
+    /* rover position by single point positioning */
+    sppStatus = pntpos(obs, nu, nav, &rtk->opt, &rtk->sol, NULL, rtk->ssat, msg);
+    if (!sppStatus) {
+        errmsg(rtk, "point pos error (%s)\n", msg);
+
+        if (!rtk->opt.dynamics) {
+            outsolstat(rtk, nav);
+            return 0;
+}
+    }
+#if 1
     //add by lw
     /* estimate position/velocity of base station */
     sppStatus = pntpos(obs + nu, nr, nav, &rtk->opt, &solb, NULL, NULL, msg);
@@ -2433,25 +2468,7 @@ extern int rtkpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
         return 0;
     }
 #endif
-    /* rover position by single point positioning */
-    sppStatus = pntpos(obs, nu, nav, &rtk->opt, &rtk->sol, NULL, rtk->ssat, msg);
-    if (!sppStatus) {
-        errmsg(rtk,"point pos error (%s)\n",msg);
-        
-        if (!rtk->opt.dynamics) {
-            outsolstat(rtk,nav);
-            return 0;
-        }
-    }
-#if 0
-    //estvel by new method
-    double x[4] = { 0 };
-    if (sppStatus)
-    {
-        testVel(obs->Ir, (obs + nu)->Ib, obs->Vs, obs->Fr, (obs + nu)->Fb, &x, nr, obs->lam);
-        for (i = 0; i < 3; i++) rtk->sol.rr[i + 3] = x[i];
-    }
-#endif
+    
     if (time.time!=0) rtk->tt=timediff(rtk->sol.time,time);
     
     /* return to static start if long delay without rover data */

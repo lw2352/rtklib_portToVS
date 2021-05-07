@@ -189,14 +189,14 @@ void testVel(double* Ir_in, double* Ib_in, double* Vs_in, double* Fr_in, double*
 	VectorXd Fr = Map<Matrix<double, Dynamic, Dynamic, ColMajor> >(Fr_in, n, 1);
 	VectorXd Fb = Map<Matrix<double, Dynamic, Dynamic, ColMajor> >(Fb_in, n, 1);
 #if 0
-	cout << x << "\n\n";
+	
 	cout << Ir << "\n\n";
 	cout << Ib << "\n\n";
 	cout << Vs << "\n\n";
 	cout << Fr << "\n\n";
 	cout << Fb << "\n\n";
 #endif
-#if 1
+
 	VectorXd y = ((Ir - Ib) * (Vs.transpose())).diagonal() + (Fr - Fb)*lam;
 	//cout << y << "\n\n";
 	MatrixXd Q = MatrixXd::Zero(4, 4);
@@ -210,22 +210,7 @@ void testVel(double* Ir_in, double* Ib_in, double* Vs_in, double* Fr_in, double*
 	x = Q * A.transpose() * y;
 	cout << x.transpose() << "\n";
 	Map<MatrixXd>(x_in, 4, 1) = x;
-#else
-	//原始的单点测速
-	VectorXd y =(Ir * Vs.transpose()).diagonal();
-	cout << y << "\n\n";
-	y =-1*Fr - y;
-	cout << y << "\n\n";
-	MatrixXd A = -1*Ir;
-	A.conservativeResize(A.rows(), A.cols() + 1);
-	VectorXd I = VectorXd::Ones(n, 1);
-	A.col(A.cols() - 1) = I;
-	cout << A << "\n\n";
-	MatrixXd Q = (A.transpose() * A).inverse();
-	cout << Q << "\n\n";
-	x = Q * A.transpose() * y;
-	cout << x.transpose() << "\n"; 
-#endif
+
 }
 /*int resultFilter(double* x, double* y, double* z)
 {

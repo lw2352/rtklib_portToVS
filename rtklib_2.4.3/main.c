@@ -100,7 +100,7 @@ static opt_t rcvopts[] = {
 void main()
 {
     int level = 2;
-#if 0
+#if 1
     //test();
 	rtkrcv(level);
 #elif 0
@@ -113,7 +113,7 @@ void main()
 	char file[MAXSTR] = "";
 	gtime_t ts={0},te={0};
     double es[] = { 2021,3,19,0,4,00 }, ee[] = { 2021,3,19,0,10,0 };
-    ts = epoch2time(es);te = epoch2time(ee);
+    //ts = epoch2time(es);te = epoch2time(ee);
     
 	prcopt_t prcopt=prcopt_default;
 	solopt_t solopt=solopt_default;
