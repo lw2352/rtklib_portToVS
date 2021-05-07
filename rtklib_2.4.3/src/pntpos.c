@@ -341,8 +341,9 @@ static int estpos(const obsd_t *obs, int n, const double *rs, const double *dts,
     
     for (i=0;i<3;i++) x[i]=sol->rr[i];
     
-    for (i=0;i<MAXITR;i++) {
-        
+    for (i=0;i<MAXITR;i++) 
+    {
+       //默认最大迭代次数是10次，或者残差和的模小于10^-4时，提前退出 
         /* pseudorange residuals */
         nv=rescode(i,obs,n,rs,dts,vare,svh,nav,x,opt,ssat,v,H,var,azel,vsat,resp,
                    &ns);
@@ -363,16 +364,17 @@ static int estpos(const obsd_t *obs, int n, const double *rs, const double *dts,
             sprintf(msg,"lsq error info=%d",info);
             break;
         }
-        for (j=0;j<NX;j++) x[j]+=dx[j];
+        for (j=0;j<NX;j++) x[j]+=dx[j];//x是初始坐标，dx是坐标变化量
         
-        if (norm(dx,NX)<1E-4) {
+        if (norm(dx,NX)<1E-4) 
+        {
             sol->type=0;
             sol->time=timeadd(obs[0].time,-x[3]/CLIGHT);
             sol->dtr[0]=x[3]/CLIGHT; /* receiver clock bias (s) */
             sol->dtr[1]=x[4]/CLIGHT; /* glo-gps time offset (s) */
             sol->dtr[2]=x[5]/CLIGHT; /* gal-gps time offset (s) */
             sol->dtr[3]=x[6]/CLIGHT; /* bds-gps time offset (s) */
-            for (j=0;j<6;j++) sol->rr[j]=j<3?x[j]:0.0;
+            for (j=0;j<6;j++) sol->rr[j]=j<3?x[j]:0.0;//解算的坐标
             for (j=0;j<3;j++) sol->qr[j]=(float)Q[j+j*NX];
             sol->qr[3]=(float)Q[1];    /* cov xy */
             sol->qr[4]=(float)Q[2+NX]; /* cov yz */
@@ -528,24 +530,24 @@ static int resdop(obsd_t *obs, int n, const double *rs, const double *dts,
         
         nv++;
         //add by lw
-        if (obs->rcv == 1)
+        if (obs[i].rcv == 1)
         {
-            memcpy(&obs->Ir[i*3], e, 3 * sizeof(double));
+            memcpy(obs[i].Ir, e, 3 * sizeof(double));
         }
-        else if (obs->rcv == 2)
+        else if (obs[i].rcv == 2)
         {
-            memcpy(&obs->Ib[i * 3], e, 3 * sizeof(double));
+            memcpy(obs[i].Ib, e, 3 * sizeof(double));
         }
-        memcpy(&obs->Vs[i * 3], vs, 3 * sizeof(double));
-        if (obs->rcv == 1)
+        memcpy(obs[i].Vs, vs, 3 * sizeof(double));
+        if (obs[i].rcv == 1)//rover
         {
-            obs->Fr[i] = lam * obs[i].D[0];// -CLIGHT * dts[1 + i * 2];
+            obs[i].Fr = lam * obs[i].D[0];// -CLIGHT * dts[1 + i * 2];
         }
-        else if (obs->rcv == 2)
+        else if (obs[i].rcv == 2)//base
         {
-            obs->Fb[i] = lam * obs[i].D[0];// -CLIGHT * dts[1 + i * 2];
+            obs[i].Fb = lam * obs[i].D[0];// -CLIGHT * dts[1 + i * 2];
         }
-        obs->lam = lam;
+        obs[i].lam = lam;
     }
     //add by lw
     return nv;

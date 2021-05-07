@@ -589,7 +589,7 @@ typedef struct {        /* observation data record */
     float  D[NFREQ+NEXOBS]; /* observation data doppler frequency (Hz) */
     //add by lw
     double lam;
-    double Ir[NSATGPS *3],Ib[NSATGPS * 3],Fr[NSATGPS],Fb[NSATGPS],Vs[NSATGPS * 3];//此处的f已经乘以波长
+    double Ir[3],Ib[3],Fr,Fb,Vs[3];//此处的f已经乘以波长
 } obsd_t;
 
 typedef struct {        /* observation data */
