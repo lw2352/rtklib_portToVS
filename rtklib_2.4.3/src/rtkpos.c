@@ -488,11 +488,13 @@ static int selsat(const obsd_t *obs, double *azel, int nu, int nr,
     int i,j,k=0;
     
     trace(3,"selsat  : nu=%d nr=%d\n",nu,nr);
-    
+
     for (i=0,j=nu;i<nu&&j<nu+nr;i++,j++) {
         if      (obs[i].sat<obs[j].sat) j--;
         else if (obs[i].sat>obs[j].sat) i--;
-        else if (azel[1+j*2]>=opt->elmin) { /* elevation at base station */
+        //add snr
+        else if (azel[1+j*2]>=opt->elmin && obs[i].SNR[0]*0.25>35)
+        { /* elevation at base station */
             sat[k]=obs[i].sat; iu[k]=i; ir[k++]=j;
             trace(4,"(%2d) sat=%3d iu=%2d ir=%2d\n",k-1,obs[i].sat,i,j);
         }
@@ -528,6 +530,18 @@ static void udpos(rtk_t *rtk, double tt)
     /* static mode */
     if (rtk->opt.mode == PMODE_STATIC)
     { 
+        //静态模式的每个历元也用伪距单点的坐标，但模型变了
+        for (i = 0; i < 3; i++) initx(rtk, rtk->sol.rr[i], VAR_POS, i);
+#if 1
+        if (rtk->sol.solStat == SOLQ_FIX)
+        {
+            for (i = 0; i < 3; i++)
+            {
+                //速度不够准确
+                rtk->x[i] = rtk->xa[i] + rtk->sol.rr[i + 3] * tt;
+            }
+        }
+#endif
         return;
     }
     
@@ -540,7 +554,7 @@ static void udpos(rtk_t *rtk, double tt)
         //sol.rr[i]由伪距单点定位得到
         for (i=0;i<3;i++) initx(rtk,rtk->sol.rr[i],VAR_POS,i); 
         //test
-#if 1
+#if 0
         if (rtk->sol.solStat == SOLQ_FIX)
         {
             for (i = 0; i < 3; i++)
@@ -1021,6 +1035,7 @@ static void udstate(rtk_t *rtk, const obsd_t *obs, const int *sat,
         udbias(rtk,tt,obs,sat,iu,ir,ns,nav);
     }
 }
+//计算单个卫星（未做差的）载波相位/伪距残差,残差 = 观测量 - 卫地距
 /* undifferenced phase/code residual for satellite ---------------------------*/
 static void zdres_sat(int base, double r, const obsd_t *obs, const nav_t *nav,
                       const double *azel, const double *dant,
@@ -1081,6 +1096,7 @@ static void zdres_sat(int base, double r, const obsd_t *obs, const nav_t *nav,
         O   y[(0:1)+i*2] = zero diff residuals {phase,code} (m)
         O   e    = line of sight unit vectors to sats
         O   azel = [az, el] to sats                                           */
+//计算某历元所有卫星（无差的）载波相位/伪距残差(残差 = 观测量 - 伪距估计量)
 static int zdres(int base, const obsd_t *obs, int n, const double *rs,
                  const double *dts, const double *var, const int *svh,
                  const nav_t *nav, const double *rr, const prcopt_t *opt,
@@ -1129,6 +1145,7 @@ static int zdres(int base, const obsd_t *obs, int n, const double *rs,
         antmodel(opt->pcvr+index,opt->antdel[index],azel+i*2,opt->posopt[1],
                  dant);
         
+        //计算观测残差
         /* calc undifferenced phase/code residual for satellite */
         zdres_sat(base,r,obs+i,nav,azel+i*2,dant,opt,y+i*nf*2);
     }
@@ -1487,8 +1504,10 @@ static int ddres(rtk_t *rtk, const nav_t *nav, const obsd_t *obs, double dt, con
                 }
 #endif              
                 /* save residuals */
-                if (code) rtk->ssat[sat[j]-1].resp[frq]=v[nv];  /* pseudorange */
-                else      rtk->ssat[sat[j]-1].resc[frq]=v[nv];  /* carrier phase */
+                if (code) 
+                    rtk->ssat[sat[j]-1].resp[frq]=v[nv];  /* pseudorange */
+                else      
+                    rtk->ssat[sat[j]-1].resc[frq]=v[nv];  /* carrier phase */
 
                 /* if residual too large, flag as outlier */
                 ii=IB(sat[i],frq,opt);
@@ -2055,7 +2074,7 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
     rs=mat(6,n);            /* range to satellites */
     dts=mat(2,n);           /* satellite clock biases */
     var=mat(1,n);
-    y=mat(nf*2,n);
+    y=mat(nf*2,n);//计算载波相位/伪距的无差残差
     e=mat(3,n);
     azel=zeros(2,n);        /* [az, el] */
 
@@ -2093,7 +2112,6 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
         free(rs); free(dts); free(var); free(y); free(e); free(azel);
         return 0;
     }
-#if 1
     //estvel by new method
     double vel[4] = { 0 };
     double* Ir_in, * Ib_in, * Vs_in, * Fr_in, * Fb_in;
@@ -2105,17 +2123,25 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
     
     for (int i = 0; i < ns; i++)
     {
-        memcpy(&Ir_in[3*i], &obs[iu[i]].Ir,3*sizeof(double));
+        memcpy(&Ir_in[3 * i], &obs[iu[i]].Ir, 3*sizeof(double));
         memcpy(&Ib_in[3 * i], &obs[ir[i]].Ib, 3 * sizeof(double));
         memcpy(&Vs_in[3 * i], &obs[iu[i]].Vs, 3 * sizeof(double));
 
         Fr_in[i] = obs[iu[i]].Fr;
         Fb_in[i] = obs[ir[i]].Fb;
     }
-    //tracemat(2, Ir_in, 3, ns, 4, 3);
-    //tracemat(2, Ib_in, 3, ns, 4, 3);
+#if 0
+    tracemat(2, Ir_in, 3, ns, 4, 3);
+    tracemat(2, Ib_in, 3, ns, 4, 3);
+#endif
+#if 1
     testVel(Ir_in, Ib_in, Vs_in, Fr_in, Fb_in, &vel, ns, obs->lam);
-    for (i = 0; i < 3; i++) rtk->sol.rr[i + 3] = vel[i];
+    for (i = 0; i < 3; i++)
+    {
+        trace(1, "testVel=%f\n", vel[i]);
+        //rtk->sol.rr[i + 3] = vel[i];
+    }
+    
 #endif
     //卡尔曼的预测，有卫星位置和卫星的初始相位
     //X(k)=AX(k-1)+BU(k-1)
@@ -2134,10 +2160,6 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
     
     /* initialize Pp,xa to zero, xp to rtk->x */
     xp=mat(rtk->nx,1); Pp=zeros(rtk->nx,rtk->nx); xa=mat(rtk->nx,1);
-    //test
-    //double test[105];
-    //memcpy(test,rtk->x,105*sizeof(double));
-    //tracemat(3, rtk->x, 1, rtk->nx, 4, 3);
     matcpy(xp,rtk->x,rtk->nx,1);
     
     ny=ns*nf*2+2;
@@ -2154,7 +2176,6 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
             stat=SOLQ_NONE;
             break;
         }
-        tracemat(4, e, 3, n, 7, 4);
         /* calculate double-differenced residuals and create state matrix from sat angles 
                 O rtk->ssat[i].resp[j] = residual pseudorange error
                 O rtk->ssat[i].resc[j] = residual carrier phase error
@@ -2177,15 +2198,17 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
                 K=P*H*(H'*P*H+R)^-1
                 xp=x+K*v
                 Pp=(I-K*H')*P                  */
-        //test
-        trace(4, "P=\n");
-        tracemat(4, rtk->P, rtk->nx, rtk->nx, 7, 4);
         matcpy(Pp,rtk->P,rtk->nx,rtk->nx);
-        if ((info=filter(xp,Pp,H,v,R,rtk->nx,nv))) {
+        double t1, t2;
+        //t1= omp_get_wtime();
+        if ((info=filter(xp,Pp,H,v,R,rtk->nx,nv))) 
+        {
             errmsg(rtk,"filter error (info=%d)\n",info);
             stat=SOLQ_NONE;
             break;
         }
+        //t2 = omp_get_wtime();
+        //printf("time use: %lf\n", (t2 - t1)*10000);
         trace(4,"x(%d)=",i+1); tracemat(4,xp,1,NR(opt),13,4);
     }
     //针对验后浮点解，再进行流动站zdres、ddres计算双差相位/码残差，
@@ -2457,7 +2480,7 @@ extern int rtkpos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
         if (!rtk->opt.dynamics) {
             outsolstat(rtk, nav);
             return 0;
-}
+        }
     }
 #if 1
     //add by lw

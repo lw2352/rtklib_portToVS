@@ -9,6 +9,7 @@
 #include<fstream>
 #include<sstream>
 #include <map>
+#include <omp.h>
 
 using namespace Eigen;
 using namespace std;
@@ -130,6 +131,8 @@ int test_filter(double* x_in, double* P_in, double* H_in,
  double* v_in, double* R_in, int n, int m,
 	double* xp_out, double* Pp_out)
 {
+	double t1, t2;
+	t1 = omp_get_wtime();
 	/* m是参与解算的卫星颗数
 	* x=(r,v,B),n是x矩阵的大小，n=3+3+8=14;
 	*/
@@ -154,7 +157,8 @@ int test_filter(double* x_in, double* P_in, double* H_in,
 
 	Map<MatrixXd>(xp_out, n, 1) = xp;
 	Map<MatrixXd>(Pp_out, n, n) = Pp;
-
+	t2 = omp_get_wtime();
+	//printf("time use: %lf\n", (t2 - t1));
 	return 0;
 }
 //这里的A已经是转置的了，和公式有点不一样
@@ -188,13 +192,14 @@ void testVel(double* Ir_in, double* Ib_in, double* Vs_in, double* Fr_in, double*
 	MatrixXd Vs = Map<Matrix<double, Dynamic, Dynamic, RowMajor> >(Vs_in, n, 3);
 	VectorXd Fr = Map<Matrix<double, Dynamic, Dynamic, ColMajor> >(Fr_in, n, 1);
 	VectorXd Fb = Map<Matrix<double, Dynamic, Dynamic, ColMajor> >(Fb_in, n, 1);
-#if 0
-	
-	cout << Ir << "\n\n";
-	cout << Ib << "\n\n";
-	cout << Vs << "\n\n";
-	cout << Fr << "\n\n";
-	cout << Fb << "\n\n";
+#if 0	
+	cout << "Ir=\n"<< Ir << "\n\n";
+
+	cout << "Ib=\n" << Ib << "\n\n";
+
+	cout << "Vs=\n" << Vs << "\n\n";
+	cout << "Fr=\n" << Fr << "\n\n";
+	cout << "Fb=\n" << Fb << "\n\n";
 #endif
 
 	VectorXd y = ((Ir - Ib) * (Vs.transpose())).diagonal() + (Fr - Fb)*lam;
@@ -208,7 +213,7 @@ void testVel(double* Ir_in, double* Ib_in, double* Vs_in, double* Fr_in, double*
 	Q = (A.transpose() * A).inverse();
 	//cout << Q << "\n\n";
 	x = Q * A.transpose() * y;
-	cout << x.transpose() << "\n";
+	//cout <<"x="<< x.transpose() << "\n";
 	Map<MatrixXd>(x_in, 4, 1) = x;
 
 }

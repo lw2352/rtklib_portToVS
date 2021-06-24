@@ -19,7 +19,7 @@
 *           2018/10/10 1.6  support api change of satexclude()
 *-----------------------------------------------------------------------------*/
 #include "rtklib.h"
-
+#include <omp.h>
 /* constants -----------------------------------------------------------------*/
 
 #define SQR(x)      ((x)*(x))
@@ -571,14 +571,22 @@ static void estvel(const obsd_t *obs, int n, const double *rs, const double *dts
             break;
         }
         /* least square estimation */
+        double t1, t2;
+        //t1 = omp_get_wtime();
         if (lsq(H,v,4,nv,dx,Q)) break;
         //if (test_lsq(H, v, 4, nv, dx, Q)) break;
-        
+        //t2 = omp_get_wtime();
+        //printf("mat normalize time : %lf\n", t2 - t1);
+                
         for (j=0;j<4;j++) x[j]+=dx[j];
         
         if (norm(dx,4)<1E-6) 
         {
-            for (i=0;i<3;i++) sol->rr[i+3]=x[i];
+            for (i = 0; i < 3; i++)
+            {
+                trace(1, "estVel=%f\n", x[i]);
+                sol->rr[i + 3] = x[i];
+            }
             break;
         }
     }

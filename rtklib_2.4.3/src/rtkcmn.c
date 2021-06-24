@@ -137,7 +137,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #endif
-
+#include <omp.h>
 
 /* constants -----------------------------------------------------------------*/
 
@@ -1132,6 +1132,8 @@ static int filter_(const double *x, const double *P, const double *H,
                    const double *v, const double *R, int n, int m,
                    double *xp, double *Pp)
 {
+    double t1, t2;
+    t1 = omp_get_wtime();
     double *F=mat(n,m),*Q=mat(m,m),*K=mat(n,m),*I=eye(n);
     int info;
     
@@ -1152,6 +1154,8 @@ static int filter_(const double *x, const double *P, const double *H,
         tracemat(2, Q, m, m, 7, 4);
     }
     free(F); free(Q); free(K); free(I);
+    t2 = omp_get_wtime();
+    //printf("time use: %lf\n", (t2 - t1));
     return info;
 }
 
