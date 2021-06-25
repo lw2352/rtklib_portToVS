@@ -1213,7 +1213,8 @@ extern int input_ubx(raw_t *raw, unsigned char data)
             return -1;
         }
     }
-    if (raw->nbyte<6||raw->nbyte<raw->len) return 0;
+    if (raw->nbyte<6||raw->nbyte<raw->len) 
+        return 0;
     raw->nbyte=0;
     
     /* decode ublox raw message */
