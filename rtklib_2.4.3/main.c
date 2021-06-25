@@ -99,8 +99,8 @@ static opt_t rcvopts[] = {
 
 void main()
 {
-    int level = 1;
-#if 1
+    int level = 2;
+#if 0
     //test();
 	rtkrcv(level);
 #elif 0

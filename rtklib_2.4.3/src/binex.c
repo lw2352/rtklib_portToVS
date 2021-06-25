@@ -36,6 +36,11 @@
 
 #define MIN(x,y)    ((x)<(y)?(x):(y))
 
+/* ura table -----------------------------------------------------------------*/
+static const double ura_eph[]={
+    2.4,3.4,4.85,6.85,9.65,13.65,24.0,48.0,96.0,192.0,384.0,768.0,1536.0,
+    3072.0,6144.0,0.0
+};
 /* get fields (big-endian) ---------------------------------------------------*/
 #define U1(p) (*((unsigned char *)(p)))
 #define I1(p) (*((signed char *)(p)))
@@ -120,7 +125,22 @@ static gtime_t adjday(gtime_t time, double tod)
     ep[3]=ep[4]=ep[5]=0.0;
     return timeadd(epoch2time(ep),tod);
 }
-
+/* ura value (m) to ura index ------------------------------------------------*/
+static int uraindex(double value)
+{
+    int i;
+    for (i=0;i<15;i++) if (ura_eph[i]>=value) break;
+    return i;
+}
+/* galileo sisa value (m) to sisa index --------------------------------------*/
+static int sisaindex(double value)
+{
+    if (value< 0.5) return (int)((value    )/0.01);
+    if (value< 1.0) return (int)((value-0.5)/0.02)+ 50;
+    if (value< 2.0) return (int)((value-1.0)/0.04)+ 75;
+    if (value<=6.0) return (int)((value-2.0)/0.16)+100;
+    return 255; /* NAPA */
+}
 /* decode binex mesaage 0x00-00: comment -------------------------------------*/
 static int decode_bnx_00_00(raw_t *raw, unsigned char *buff, int len)
 {
@@ -629,7 +649,7 @@ static int decode_bnx_01_04(raw_t *raw, unsigned char *buff, int len)
     eph.toe=gpst2time(eph.week,eph.toes);
     eph.toc=gpst2time(eph.week,eph.toes);
     eph.ttr=adjweek(eph.toe,tow);
-	eph.sva=ura<0.0?(int)(-ura)-1:sisa_index(ura); /* sisa index */
+    eph.sva=ura<0.0?(int)(-ura)-1:sisaindex(ura); /* sisa index */
     if (!strstr(raw->opt,"-EPHALL")) {
         if (raw->nav.eph[eph.sat-1].iode==eph.iode&&
             raw->nav.eph[eph.sat-1].iodc==eph.iodc) return 0; /* unchanged */
@@ -836,7 +856,7 @@ static int decode_bnx_01_14(raw_t *raw, unsigned char *buff, int len)
     eph.toe=gpst2time(eph.week,eph.toes);
     eph.toc=gpst2time(eph.week,tocs);
     eph.ttr=adjweek(eph.toe,tow);
-    eph.sva=ura<0.0?(int)(-ura)-1:sisa_index(ura); /* sisa index */
+    eph.sva=ura<0.0?(int)(-ura)-1:sisaindex(ura); /* sisa index */
     if (!strstr(raw->opt,"-EPHALL")) {
         if (raw->nav.eph[eph.sat-1].iode==eph.iode&&
             raw->nav.eph[eph.sat-1].iodc==eph.iodc) return 0; /* unchanged */
@@ -1072,7 +1092,7 @@ static unsigned char *decode_bnx_7f_05_obs(raw_t *raw, unsigned char *buff,
             }
             data->P[i]=range[k];
             data->L[i]=wl<=0.0?0.0:phase[k]/wl;
-            data->D[i]=(float)dopp[k];
+            data->D[i]=dopp[k];
             data->SNR[i]=(unsigned char)(cnr[k]/0.25+0.5);
             data->code[i]=codes[code[k]&0x3F];
             data->LLI[i]=slip[k]?1:0;
@@ -1097,7 +1117,7 @@ static unsigned char *decode_bnx_7f_05_obs(raw_t *raw, unsigned char *buff,
             }
             data->P[i]=range[k];
             data->L[i]=wl<=0.0?0.0:phase[k]/wl;
-            data->D[i]=(float)dopp[k];
+            data->D[i]=dopp[k];
             data->SNR[i]=(unsigned char)(cnr[k]/0.25+0.5);
             data->code[i]=codes[code[k]&0x3F];
             data->LLI[i]=slip[k]?1:0;

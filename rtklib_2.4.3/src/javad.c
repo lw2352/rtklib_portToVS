@@ -185,7 +185,7 @@ static double freq_sys(int sys, int freq, int freqn)
         return 0.0;
     }
     else if (sys==SYS_GAL&&freq==1) { /* Galileo E5b */
-        return FREQE5b;
+        return FREQ7;
     }
     else {
         return CLIGHT/lam_carr[freq];

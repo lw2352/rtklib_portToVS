@@ -152,9 +152,8 @@ static void updatesvr(rtksvr_t *svr, int ret, obs_t *obs, nav_t *nav, int sat,
     if (ret==1) { /* observation data */
         if (iobs<MAXOBSBUF) {
             for (i=0;i<obs->n;i++) {
-                if (svr->rtk.opt.exsats[obs->data[i].sat-1]==1||//排除特定卫星
-                    !(satsys(obs->data[i].sat,NULL)&svr->rtk.opt.navsys)) 
-                    continue;
+                if (svr->rtk.opt.exsats[obs->data[i].sat-1]==1||
+                    !(satsys(obs->data[i].sat,NULL)&svr->rtk.opt.navsys)) continue;
                 svr->obs[index][iobs].data[n]=obs->data[i];
                 svr->obs[index][iobs].data[n++].rcv=index+1;
             }
@@ -527,33 +526,6 @@ static void send_nmea(rtksvr_t *svr, unsigned int *tickreset)
 			   sol_nmea.rr[2]);
 	}
 }
-void changeLED(int solStat)
-{
-    int a;
-    if (solStat == SOLQ_NONE)        
-    {
-        //all off
-        a = 0;
-    }
-    if (solStat == SOLQ_SINGLE)
-    {
-        //all off
-        //red on
-        a = 1;
-    }
-    if (solStat == SOLQ_FLOAT)
-    {
-        //all off
-        //blue on
-        a = 2;
-    }
-    if (solStat == SOLQ_FIX)
-    {
-        //all on
-        a = 3;
-    }
-    //printf("a=%d\n",a);
-}
 /* rtk server thread ---------------------------------------------------------*/
 #ifdef WIN32
 static DWORD WINAPI rtksvrthread(void *arg)
@@ -606,7 +578,7 @@ static void *rtksvrthread(void *arg)
             }
             else {
                 /* decode receiver raw/rtcm data */
-                fobs[i]=decoderaw(svr,i);//解码数据
+                fobs[i]=decoderaw(svr,i);
             }
         }
         /* averaging single base pos */
@@ -635,7 +607,6 @@ static void *rtksvrthread(void *arg)
             }
             /* rtk positioning */
             rtksvrlock(svr);
-            //调用定位解算函数
             rtkpos(&svr->rtk,obs.data,obs.n,&svr->nav);
             rtksvrunlock(svr);
             
@@ -648,8 +619,6 @@ static void *rtksvrthread(void *arg)
                 /* write solution */
                 writesol(svr,i);
             }
-            //change LED
-            changeLED(svr->rtk.sol.stat);
             /* if cpu overload, inclement obs outage counter and break */
             if ((int)(tickget()-tick)>=svr->cycle) {
                 svr->prcout+=fobs[0]-i-1;

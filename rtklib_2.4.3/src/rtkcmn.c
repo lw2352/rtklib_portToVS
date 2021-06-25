@@ -137,7 +137,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #endif
-#include <omp.h>
+
 
 /* constants -----------------------------------------------------------------*/
 
@@ -185,30 +185,28 @@ const double chisqr[100]={      /* chi-sqr(n) (alpha=0.001) */
     138 ,139 ,140 ,142 ,143 ,144 ,145 ,147 ,148 ,149
 };
 const double lam_carr[MAXFREQ]={ /* carrier wave length (m) */
-	CLIGHT/FREQL1,CLIGHT/FREQL2,CLIGHT/FREQL5,CLIGHT/FREQE6,
-    CLIGHT/FREQE5ab,CLIGHT/FREQs
+    CLIGHT/FREQ1,CLIGHT/FREQ2,CLIGHT/FREQ5,CLIGHT/FREQ6,CLIGHT/FREQ7,
+    CLIGHT/FREQ8,CLIGHT/FREQ9
 };
 const prcopt_t prcopt_default={ /* defaults processing options */
-    PMODE_KINEMA,0,2,SYS_GPS|SYS_GLO|SYS_GAL,   /* mode,soltype,nf,navsys */
+    PMODE_SINGLE,0,2,SYS_GPS,   /* mode,soltype,nf,navsys */
     15.0*D2R,{{0,0}},           /* elmin,snrmask */
-    0,3,3,1,0,1,                /* sateph,modear,glomodear,gpsmodear,bdsmodear,arfilter */
-    20,0,4,5,10,20,             /* maxout,minlock,minfixsats,minholdsats,mindropsats,minfix */
-    0,1,1,1,1,0,                /* rcvstds,armaxiter,estion,esttrop,dynamics,tidecorr */
+    0,1,1,1,                    /* sateph,modear,glomodear,bdsmodear */
+    5,0,10,1,                   /* maxout,minlock,minfix,armaxiter */
+    0,0,0,0,                    /* estion,esttrop,dynamics,tidecorr */
     1,0,0,0,0,                  /* niter,codesmooth,intpref,sbascorr,sbassatsel */
     0,0,                        /* rovpos,refpos */
-    WEIGHTOPT_ELEVATION,        /* weightmode */
-    {300.0,300.0,300.0},        /* eratio[] */
-    {100.0,0.003,0.003,0.0,1.0,52.0}, /* err[] */
+    {100.0,100.0},              /* eratio[] */
+    {100.0,0.003,0.003,0.0,1.0}, /* err[] */
     {30.0,0.03,0.3},            /* std[] */
     {1E-4,1E-3,1E-4,1E-1,1E-2,0.0}, /* prn[] */
     5E-12,                      /* sclkstab */
-    {3.0,0.25,0.0,1E-9,1E-5,0.0,0.0,0.0}, /* thresar */
-    0.0,0.0,0.05,0.1,0.01,      /* elmaskar,elmaskhold,thresslip,varholdamb,gainholdamb */
-    30.0,5.0,30.0,              /* maxtdif,maxinno,maxgdop */
+    {3.0,0.9999,0.25,0.1,0.05}, /* thresar */
+    0.0,0.0,0.05,               /* elmaskar,almaskhold,thresslip */
+    30.0,30.0,30.0,             /* maxtdif,maxinno,maxgdop */
     {0},{0},{0},                /* baseline,ru,rb */
     {"",""},                    /* anttype */
-    {{0}},{{0}},{0},            /* antdel,pcv,exsats */
-    1,1                         /* maxaveep,initrst */
+    {{0}},{{0}},{0}             /* antdel,pcv,exsats */
 };
 const solopt_t solopt_default={ /* defaults solution output options */
     SOLF_LLH,TIMES_GPST,1,3,    /* posf,times,timef,timeu */
@@ -221,9 +219,9 @@ const char *formatstrs[32]={    /* stream format strings */
     "RTCM 2",                   /*  0 */
     "RTCM 3",                   /*  1 */
     "NovAtel OEM6",             /*  2 */
-    "ComNav",                   /*  3 */
+    "NovAtel OEM3",             /*  3 */
     "u-blox",                   /*  4 */
-    "Swift Navigation SBP",     /*  5 */
+    "Superstar II",             /*  5 */
     "Hemisphere",               /*  6 */
     "SkyTraq",                  /*  7 */
     "GW10",                     /*  8 */
@@ -252,24 +250,24 @@ static char *obscodes[]={       /* observation code strings */
     "5B","5C","9A","9B","9C", "9X",""  ,""  ,""  ,""    /* 50-59 */
 };
 static unsigned char obsfreqs[]={
-    /* 1:L1/E1/B1, 2:L2/E5b/B2, 3:L5/E5a, 4:E6/LEX/B3, 5:E5(a+b), 6:S */
+    /* 1:L1/E1, 2:L2/B1, 3:L5/E5a/L3, 4:L6/LEX/B3, 5:E5b/B2, 6:E5(a+b), 7:S */
     0, 1, 1, 1, 1,  1, 1, 1, 1, 1, /*  0- 9 */
     1, 1, 1, 1, 2,  2, 2, 2, 2, 2, /* 10-19 */
-    2, 2, 2, 2, 3,  3, 3, 2, 2, 2, /* 20-29 */
-    4, 4, 4, 4, 4,  4, 4, 5, 5, 5, /* 30-39 */
-    1, 1, 3, 3, 3,  3, 3, 1, 1, 3, /* 40-49 */
-    3, 3, 6, 6, 6,  6, 0, 0, 0, 0  /* 50-59 */
+    2, 2, 2, 2, 3,  3, 3, 5, 5, 5, /* 20-29 */
+    4, 4, 4, 4, 4,  4, 4, 6, 6, 6, /* 30-39 */
+    2, 2, 4, 4, 3,  3, 3, 1, 1, 3, /* 40-49 */
+    3, 3, 7, 7, 7,  7, 0, 0, 0, 0  /* 50-59 */
 };
 static char codepris[7][MAXFREQ][16]={  /* code priority table */
-
-   /* L1/E1/B1   L2/E5b/B2   L5/E5a/L3 E6/LEX  E5(a+b)  S */
-    {"CPYWMNSL","CLPYWMNDSX","IQX"   ,""        ,""      ,""    }, /* GPS */
-    {"PC"      ,"PC"        ,"IQX"   ,""        ,""      ,""    }, /* GLO */
-    {"CABXZ"   ,"IQX"       ,"IQX"   ,"ABCXZ"   ,"IQX"   ,""    }, /* GAL */
-    {"CSLXZ"   ,"SLX"       ,"IQX"   ,"SLX"     ,""      ,""    }, /* QZS */
-    {"C"       ,""          ,"IQX"   ,""        ,""      ,""    }, /* SBS */
-    {"IQX"     ,"IQX"       ,"IQX"   ,"IQX"     ,""      ,""    }, /* BDS */
-    {""        ,""          ,"ABCX"  ,""        ,""      ,"ABCX"}  /* IRN */
+   
+   /* L1/E1      L2/B1        L5/E5a/L3 L6/LEX/B3 E5b/B2    E5(a+b)  S */
+    {"CPYWMNSL","PYWCMNDSLX","IQX"     ,""       ,""       ,""      ,""    }, /* GPS */
+    {"PC"      ,"PC"        ,"IQX"     ,""       ,""       ,""      ,""    }, /* GLO */
+    {"CABXZ"   ,""          ,"IQX"     ,"ABCXZ"  ,"IQX"    ,"IQX"   ,""    }, /* GAL */
+    {"CSLXZ"   ,"SLX"       ,"IQX"     ,"SLX"    ,""       ,""      ,""    }, /* QZS */
+    {"C"       ,""          ,"IQX"     ,""       ,""       ,""      ,""    }, /* SBS */
+    {"IQX"     ,"IQX"       ,"IQX"     ,"IQX"    ,"IQX"    ,""      ,""    }, /* BDS */
+    {""        ,""          ,"ABCX"    ,""       ,""       ,""      ,"ABCX"}  /* IRN */
 };
 static fatalfunc_t *fatalfunc=NULL; /* fatal callback function */
 
@@ -341,14 +339,6 @@ static const unsigned int tbl_CRC24Q[]={
     0x87B4A6,0x01F85D,0x0D61AB,0x8B2D50,0x145247,0x921EBC,0x9E874A,0x18CBB1,
     0xE37B16,0x6537ED,0x69AE1B,0xEFE2E0,0x709DF7,0xF6D10C,0xFA48FA,0x7C0401,
     0x42FA2F,0xC4B6D4,0xC82F22,0x4E63D9,0xD11CCE,0x575035,0x5BC9C3,0xDD8538
-};
-const double ura_value[]={              /* ura max values */
-    2.4,3.4,4.85,6.85,9.65,13.65,24.0,48.0,96.0,192.0,384.0,768.0,1536.0,
-    3072.0,6144.0
-};
-static const double ura_nominal[]={     /* ura nominal values */
-    2.0,2.8,4.0,5.7,8.0,11.3,16.0,32.0,64.0,128.0,256.0,512.0,1024.0,
-    2048.0,4096.0,8192.0
 };
 /* function prototypes -------------------------------------------------------*/
 #ifdef MKL
@@ -568,7 +558,7 @@ extern int testsnr(int base, int freq, double el, double snr,
     double minsnr,a;
     int i;
     
-    if (!mask->ena[base]||freq<0||freq>=NFREQ||snr==0) return 0;
+    if (!mask->ena[base]||freq<0||freq>=NFREQ) return 0;
     
     a=(el*R2D+5.0)/10.0;
     i=(int)floor(a); a-=i;
@@ -601,8 +591,8 @@ extern unsigned char obs2code(const char *obs, int *freq)
 * convert obs code to obs code string
 * args   : unsigned char code I obs code (CODE_???)
 *          int    *freq  IO     frequency (NULL: no output)
-*                               (1:L1/E1/B1, 2:L2/B2, 3:L5/E5a/L3/B3, 4:L6/LEX,
-                                 5:E5b, 6:E5(a+b), 7:S)
+*                               (1:L1/E1, 2:L2/B1, 3:L5/E5a/L3, 4:L6/LEX/B3,
+                                 5:E5b/B2, 6:E5(a+b), 7:S)
 * return : obs code string ("1C","1P","1P",...)
 * notes  : obs codes are based on reference [6] and qzss extension
 *-----------------------------------------------------------------------------*/
@@ -1132,8 +1122,6 @@ static int filter_(const double *x, const double *P, const double *H,
                    const double *v, const double *R, int n, int m,
                    double *xp, double *Pp)
 {
-    double t1, t2;
-    t1 = omp_get_wtime();
     double *F=mat(n,m),*Q=mat(m,m),*K=mat(n,m),*I=eye(n);
     int info;
     
@@ -1141,52 +1129,32 @@ static int filter_(const double *x, const double *P, const double *H,
     matcpy(xp,x,n,1);
     matmul("NN",n,m,n,1.0,P,H,0.0,F);       /* Q=H'*P*H+R */
     matmul("TN",m,m,n,1.0,H,F,1.0,Q);
-    if (!(info=matinv(Q,m))) //对Q矩阵求逆
-    {
+    if (!(info=matinv(Q,m))) {
         matmul("NN",n,m,m,1.0,F,Q,0.0,K);   /* K=P*H*Q^-1 */
         matmul("NN",n,1,m,1.0,K,v,1.0,xp);  /* xp=x+K*v */
         matmul("NT",n,n,m,-1.0,K,H,1.0,I);  /* Pp=(I-K*H')*P */
         matmul("NN",n,n,n,1.0,I,P,0.0,Pp);
     }
-    else
-    {
-        trace(2, "Q=\n");
-        tracemat(2, Q, m, m, 7, 4);
-    }
     free(F); free(Q); free(K); free(I);
-    t2 = omp_get_wtime();
-    //printf("time use: %lf\n", (t2 - t1));
     return info;
 }
-
-//代码里的H是公式中的H的转置,矩阵mat是列优先存储
-//filter 函数首先进行状态预测，然后调用 filter_ 函数进行校正
 extern int filter(double *x, double *P, const double *H, const double *v,
                   const double *R, int n, int m)
 {
     double *x_,*xp_,*P_,*Pp_,*H_;
     int i,j,k,info,*ix;
     
-    /* create list of non-zero states */
-    ix=imat(n,1); 
-    for (i = k = 0; i < n; i++)
-    {
-        if (x[i] != 0.0 && P[i + i * n] > 0.0)
-            ix[k++] = i;
-    }
+    ix=imat(n,1); for (i=k=0;i<n;i++) if (x[i]!=0.0&&P[i+i*n]>0.0) ix[k++]=i;
     x_=mat(k,1); xp_=mat(k,1); P_=mat(k,k); Pp_=mat(k,k); H_=mat(k,m);
-    /* compress array by removing zero elements to save computation time */
-    
     for (i=0;i<k;i++) {
         x_[i]=x[ix[i]];
         for (j=0;j<k;j++) P_[i+j*k]=P[ix[i]+ix[j]*n];
         for (j=0;j<m;j++) H_[i+j*k]=H[ix[i]+j*n];
     }
-    /* do kalman filter state update on compressed arrays */
     info=filter_(x_,P_,H_,v,R,k,m,xp_,Pp_);
     //info = test_filter(x_, P_, H_, v, R, k, m, xp_, Pp_);
     
-    /* copy values from compressed arrays back to full arrays */
+
     for (i=0;i<k;i++) {
         x[ix[i]]=xp_[i];
         for (j=0;j<k;j++) P[ix[i]+ix[j]*n]=Pp_[i+j*k];
@@ -2317,7 +2285,7 @@ extern pcv_t *searchpcv(int sat, const char *type, gtime_t time,
     char buff[MAXANT],*types[2],*p;
     int i,j,n=0;
     
-    trace(4,"searchpcv: sat=%2d type=%s\n",sat,type);
+    trace(3,"searchpcv: sat=%2d type=%s\n",sat,type);
     
     if (sat) { /* search satellite antenna */
         for (i=0;i<pcvs->n;i++) {
@@ -2653,36 +2621,6 @@ static void uniqseph(nav_t *nav)
     
     trace(4,"uniqseph: ns=%d\n",nav->ns);
 }
-/* ura index to ura nominal value (m) ----------------------------------------*/
-extern double uravalue(int sva)
-{
-    return 0<=sva&&sva<15?ura_nominal[sva]:8192.0;
-}
-/* ura value (m) to ura index ------------------------------------------------*/
-extern int uraindex(double value)
-{
-    int i;
-    for (i=0;i<15;i++) if (ura_value[i]>=value) break;
-    return i;
-}
-/* galileo sisa index to sisa nominal value (m) ------------------------------*/
-extern double sisa_value(int sisa)
-{
-    if (sisa<= 49) return sisa*0.01;
-    if (sisa<= 74) return 0.5+(sisa- 50)*0.02;
-    if (sisa<= 99) return 1.0+(sisa- 75)*0.04;
-    if (sisa<=125) return 2.0+(sisa-100)*0.16;
-    return -1.0; /* unknown or NAPA */
-}
-/* galileo sisa value (m) to sisa index --------------------------------------*/
-extern int sisa_index(double value)
-{
-    if (value<0.0 || value>6.0) return 255; /* unknown or NAPA */
-    else if (value<=0.5) return (int)(value/0.01);
-    else if (value<=1.0) return (int)((value-0.5)/0.02)+50;
-    else if (value<=2.0) return (int)((value-1.0)/0.04)+75;
-    return (int)((value-2.0)/0.16)+100;
-}
 /* unique ephemerides ----------------------------------------------------------
 * unique ephemerides in navigation data and update carrier wave length
 * args   : nav_t *nav    IO     navigation data
@@ -2973,18 +2911,14 @@ extern void tracelevel(int level)
 {
     level_trace=level;
 }
-extern int gettracelevel(void)
-{
-    return level_trace;
-}
 extern void trace(int level, const char *format, ...)
 {
     va_list ap;
     
     /* print error message to stderr */
-    if (level<=1) {
+    /*if (level<=1) {
         va_start(ap,format); vfprintf(stderr,format,ap); va_end(ap);
-    }
+    }*/
     if (!fp_trace||level>level_trace) return;
     traceswap();
     fprintf(fp_trace,"%d ",level);
@@ -3015,10 +2949,10 @@ extern void traceobs(int level, const obsd_t *obs, int n)
     for (i=0;i<n;i++) {
         time2str(obs[i].time,str,3);
         satno2id(obs[i].sat,id);
-        fprintf(fp_trace," (%2d) %s %-3s rcv%d %13.3f %13.3f %13.3f %13.3f %d %d %d %d %x %x %3.1f %3.1f\n",
+        fprintf(fp_trace," (%2d) %s %-3s rcv%d %13.3f %13.3f %13.3f %13.3f %d %d %d %d %3.1f %3.1f\n",
               i+1,str,id,obs[i].rcv,obs[i].L[0],obs[i].L[1],obs[i].P[0],
               obs[i].P[1],obs[i].LLI[0],obs[i].LLI[1],obs[i].code[0],
-              obs[i].code[1],obs[i].qualL[0],obs[i].qualP[0],obs[i].SNR[0]*0.25,obs[i].SNR[1]*0.25);
+              obs[i].code[1],obs[i].SNR[0]*0.25,obs[i].SNR[1]*0.25);
     }
     fflush(fp_trace);
 }
@@ -3411,18 +3345,18 @@ extern double satwavelen(int sat, int frq, const nav_t *nav)
         else if (frq==2) return CLIGHT/FREQ3_CMP; /* B3 */
     }
     else if (sys==SYS_GAL) {
-        if      (frq==0) return CLIGHT/FREQL1; /* E1 */
-        else if (frq==1) return CLIGHT/FREQE5b; /* E5b */
-        else if (frq==2) return CLIGHT/FREQL5; /* E5a */
-        else if (frq==3) return CLIGHT/FREQE6; /* E6 */
-        else if (frq==5) return CLIGHT/FREQE5ab; /* E5ab */
+        if      (frq==0) return CLIGHT/FREQ1; /* E1 */
+        else if (frq==1) return CLIGHT/FREQ7; /* E5b */
+        else if (frq==2) return CLIGHT/FREQ5; /* E5a */
+        else if (frq==3) return CLIGHT/FREQ6; /* E6 */
+        else if (frq==5) return CLIGHT/FREQ8; /* E5ab */
     }
     else { /* GPS,QZS */
-        if      (frq==0) return CLIGHT/FREQL1; /* L1 */
-        else if (frq==1) return CLIGHT/FREQL2; /* L2 */
-        else if (frq==2) return CLIGHT/FREQL5; /* L5 */
-        else if (frq==3) return CLIGHT/FREQE6; /* L6/LEX */
-        else if (frq==6) return CLIGHT/FREQs; /* S */
+        if      (frq==0) return CLIGHT/FREQ1; /* L1 */
+        else if (frq==1) return CLIGHT/FREQ2; /* L2 */
+        else if (frq==2) return CLIGHT/FREQ5; /* L5 */
+        else if (frq==3) return CLIGHT/FREQ6; /* L6/LEX */
+        else if (frq==6) return CLIGHT/FREQ9; /* S */
     }
     return 0.0;
 }

@@ -432,8 +432,8 @@ static void sort_codes(unsigned char *codes, unsigned char *types, int n)
     int i,j;
     
     for (i=0;i<n-1;i++) for (j=i+1;j<n;j++) {
-	   obs1=code2obs(codes[i],NULL);
-	   obs2=code2obs(codes[j],NULL);
+       obs1=code2obs(codes[i],NULL);
+       obs2=code2obs(codes[j],NULL);
        if (strcmp(obs1,obs2)<=0) continue;
        tmp=codes[i]; codes[i]=codes[j]; codes[j]=tmp;
        tmp=types[i]; types[i]=types[j]; types[j]=tmp;
@@ -455,7 +455,7 @@ static void setopt_obstype(const unsigned char *codes,
     
     for (i=0;codes[i];i++) {
         
-		if (!(id=code2obs(codes[i],&freq))) continue;
+        if (!(id=code2obs(codes[i],&freq))) continue;
         
         if (!(opt->freqtype&(1<<(freq-1)))||opt->mask[sys][codes[i]-1]=='0') {
             continue;
@@ -662,7 +662,7 @@ static int scan_obstype(int format, char **files, int nf, rnxopt_t *opt,
         return 0;
     }
     for (i=0;i<NSATSYS;i++) for (j=0;j<n[i];j++) {
-		trace(2,"scan_obstype: sys=%d code=%s type=%d\n",i,code2obs(codes[i][j],NULL),types[i][j]);
+        trace(2,"scan_obstype: sys=%d code=%s type=%d\n",i,code2obs(codes[i][j],NULL),types[i][j]);
     }
     for (i=0;i<NSATSYS;i++) {
         
@@ -691,42 +691,27 @@ static void set_obstype(int format, rnxopt_t *opt)
         {0},
         {0}
     };
-    static const unsigned char codes_rtcm3[NSATSYS][32]={ /* rtcm 3.2 */
-        {CODE_L1C,CODE_L1P,CODE_L1W,CODE_L1Y,CODE_L1M,CODE_L1N,CODE_L1S,CODE_L1L,
-         CODE_L2C,CODE_L2D,CODE_L2S,CODE_L2L,CODE_L2X,CODE_L2P,CODE_L2W,CODE_L2Y,
-         CODE_L2M,CODE_L2N,CODE_L5I,CODE_L5Q,CODE_L5X},
-        {CODE_L1C,CODE_L1P,CODE_L2C,CODE_L2P,CODE_L3I,CODE_L3Q,CODE_L3X},
-        {CODE_L1C,CODE_L1A,CODE_L1B,CODE_L1X,CODE_L1Z,CODE_L5I,CODE_L5Q,CODE_L5X,
-         CODE_L6A,CODE_L6B,CODE_L6C,CODE_L6X,CODE_L6Z,CODE_L7I,CODE_L7Q,CODE_L7X,
-         CODE_L8I,CODE_L8Q,CODE_L8X},
-        {CODE_L1C,CODE_L1S,CODE_L1L,CODE_L1X,CODE_L1Z,CODE_L2S,CODE_L2L,CODE_L2X,
-         CODE_L5I,CODE_L5Q,CODE_L5X,CODE_L6S,CODE_L6L,CODE_L6X},
-        {CODE_L1C,CODE_L5I,CODE_L5Q,CODE_L5X},
-        {CODE_L1I,CODE_L1Q,CODE_L1X,CODE_L2I,CODE_L2Q,CODE_L2X,
-         CODE_L7I,CODE_L7Q,CODE_L7X,CODE_L6I,CODE_L6Q,CODE_L6X},
-        {CODE_L5A,CODE_L5B,CODE_L5C,CODE_L5X,CODE_L9A,CODE_L9B,CODE_L9C,CODE_L9X}
-    };
-    static const unsigned char codes_cnav[NSATSYS][8]={ /* comnav */
-        {CODE_L1C,CODE_L1P,CODE_L2D,CODE_L2X,CODE_L5I},
-        {CODE_L1C,CODE_L2C},
-        {CODE_L1B,CODE_L1X,CODE_L5X,CODE_L7X,CODE_L8X},
-        {CODE_L1C,CODE_L2X,CODE_L5Q},
-        {CODE_L1C,CODE_L5I},
+    static const unsigned char codes_rtcm3[NSATSYS][8]={ /* rtcm3 */
+        {CODE_L1C,CODE_L1W,CODE_L2W,CODE_L2X,CODE_L5X},
+        {CODE_L1C,CODE_L1P,CODE_L2C,CODE_L2P},
+        {CODE_L1X,CODE_L5X,CODE_L7X,CODE_L8X},
+        {CODE_L1C,CODE_L2X,CODE_L5X},
+        {CODE_L1C,CODE_L5X},
         {CODE_L1I,CODE_L7I},
+        {0}
+    };
+    static const unsigned char codes_oem3[NSATSYS][8]={ /* novatel oem3 */
+        {CODE_L1C,CODE_L2P},
+        {0},
+        {0},
+        {0},
+        {CODE_L1C},
+        {0},
         {0}
     };
     static const unsigned char codes_oem4[NSATSYS][8]={ /* novatel oem6 */
         {CODE_L1C,CODE_L1P,CODE_L2D,CODE_L2X,CODE_L5Q},
         {CODE_L1C,CODE_L2C,CODE_L2P},
-        {CODE_L1B,CODE_L1C,CODE_L5Q,CODE_L7Q,CODE_L8Q},
-        {CODE_L1C,CODE_L2X,CODE_L5Q},
-        {CODE_L1C,CODE_L5I},
-        {CODE_L1I,CODE_L7I},
-        {0}
-    };
-    static const unsigned char codes_trs[NSATSYS][8]={ /* tersus */
-        {CODE_L1C,CODE_L2D},
-        {CODE_L1C,CODE_L2P},
         {CODE_L1B,CODE_L1C,CODE_L5Q,CODE_L7Q,CODE_L8Q},
         {CODE_L1C,CODE_L2X,CODE_L5Q},
         {CODE_L1C,CODE_L5I},
@@ -762,8 +747,8 @@ static void set_obstype(int format, rnxopt_t *opt)
         {CODE_L1C,CODE_L1S,CODE_L1L,CODE_L1X,CODE_L1Z,CODE_L2S,CODE_L2L,CODE_L2X,
          CODE_L5I,CODE_L5Q,CODE_L5X,CODE_L6S,CODE_L6L,CODE_L6X},
         {CODE_L1C,CODE_L5I,CODE_L5Q,CODE_L5X},
-        {CODE_L1I,CODE_L1Q,CODE_L1X,CODE_L2I,CODE_L2Q,CODE_L2X,
-         CODE_L7I,CODE_L7Q,CODE_L7X,CODE_L6I,CODE_L6Q,CODE_L6X},
+        {CODE_L1I,CODE_L1Q,CODE_L1X,CODE_L7I,CODE_L7Q,CODE_L7X,CODE_L6I,CODE_L6Q,
+         CODE_L6X},
         {CODE_L5A,CODE_L5B,CODE_L5C,CODE_L5X,CODE_L9A,CODE_L9B,CODE_L9C,CODE_L9X}
     };
     static const unsigned char codes_rt17[NSATSYS][8]={ /* rt17 */
@@ -773,7 +758,7 @@ static void set_obstype(int format, rnxopt_t *opt)
         {0},
         {0},
         {0},
-        {0}
+        {0},
     };
     static const unsigned char codes_cmr[NSATSYS][8]={ /* cmr */
         {CODE_L1C,CODE_L1P,CODE_L2C,CODE_L2P,CODE_L2W},
@@ -782,45 +767,34 @@ static void set_obstype(int format, rnxopt_t *opt)
         {0},
         {0},
         {0},
-        {0}
+        {0},
     };
-    static const unsigned char codes_sbp[NSATSYS][8]={ /* Swift */
-        {CODE_L1C,CODE_L2S},
-        {CODE_L1C,CODE_L2C},
-        {CODE_L1B,CODE_L7I},
+    static const unsigned char codes_other[NSATSYS][8]={ /* others */
         {CODE_L1C},
         {CODE_L1C},
-        {CODE_L1I,CODE_L7I},
-        {0}
-    };
-    static const unsigned char codes_other[NSATSYS][8]={ /* others inc u-blox */
-        {CODE_L1C,CODE_L2L,CODE_L2S},
-        {CODE_L1C,CODE_L2C},
-        {CODE_L1C,CODE_L1X,CODE_L7Q},
         {CODE_L1C},
         {CODE_L1C},
-        {CODE_L1I,CODE_L2I,CODE_L7I},
+        {CODE_L1C},
+        {CODE_L1I},
         {0}
     };
     const unsigned char *codes;
     int i;
     
     trace(3,"set_obstype: format=%d\n",format);
-
+    
     for (i=0;i<NSATSYS;i++) {
         switch (format) {
             case STRFMT_RTCM2: codes=codes_rtcm2[i]; break;
             case STRFMT_RTCM3: codes=codes_rtcm3[i]; break;
             case STRFMT_OEM4 : codes=codes_oem4 [i]; break;
-            case STRFMT_CNAV : codes=codes_cnav [i]; break;
+            case STRFMT_OEM3 : codes=codes_oem3 [i]; break;
             case STRFMT_CRES : codes=codes_cres [i]; break;
-            case STRFMT_SBP  : codes=codes_sbp  [i]; break;
             case STRFMT_JAVAD: codes=codes_javad[i]; break;
             case STRFMT_BINEX: codes=codes_rinex[i]; break;
             case STRFMT_RT17 : codes=codes_rt17 [i]; break;
             case STRFMT_CMR  : codes=codes_cmr  [i]; break;
             case STRFMT_RINEX: codes=codes_rinex[i]; break;
-            case STRFMT_TERSUS: codes=codes_trs [i]; break;
             default:           codes=codes_other[i]; break;
         }
         /* set observation types in rinex option */
@@ -1008,12 +982,7 @@ static void convobs(FILE **ofp, rnxopt_t *opt, strfile_t *str, int *staid,
         }
     }
     /* output rinex obs */
-    outrnxobsb(ofp[0],opt,str->obs->data,str->obs->n,str->obs->flag);
-    /* n[NOUTFILE+1] - count of events converted to rinex */
-    if (str->obs->flag == 5)
-       n[NOUTFILE+1]++;
-    /* set to zero flag for the next iteration (initialization) */
-    str->obs->flag = 0;
+    outrnxobsb(ofp[0],opt,str->obs->data,str->obs->n,0);
     
     if (opt->tstart.time==0) opt->tstart=time;
     opt->tend=time;
@@ -1224,7 +1193,7 @@ static void setapppos(strfile_t *str, rnxopt_t *opt)
 /* show status message -------------------------------------------------------*/
 static int showstat(int sess, gtime_t ts, gtime_t te, int *n)
 {
-    const char type[]="ONGHQLCISET";
+    const char type[]="ONGHQLCISE";
     char msg[1024]="",*p=msg,s[64];
     int i;
     
@@ -1241,10 +1210,9 @@ static int showstat(int sess, gtime_t ts, gtime_t te, int *n)
     }
     p+=sprintf(p,": ");
     
-    /* +2 to NOUTFILE for counters of errors and events */
-    for (i=0;i<NOUTFILE+2;i++) {
+    for (i=0;i<NOUTFILE+1;i++) {
         if (n[i]==0) continue;
-        p+=sprintf(p,"%c=%d%s",type[i],n[i],i<NOUTFILE+1?" ":"");
+        p+=sprintf(p,"%c=%d%s",type[i],n[i],i<NOUTFILE?" ":"");
     }
     return showmsg(msg);
 }
@@ -1258,7 +1226,7 @@ static int convrnx_s(int sess, int format, rnxopt_t *opt, const char *file,
     halfc_t halfc={{{0}}};
     gtime_t ts={0},te={0},tend={0},time={0};
     unsigned char slips[MAXSAT][NFREQ+NEXOBS]={{0}};
-    int i,j,nf,type,n[NOUTFILE+2]={0},staid=-1,abort=0;
+    int i,j,nf,type,n[NOUTFILE+1]={0},staid=-1,abort=0;
     char path[1024],*paths[NOUTFILE],s[NOUTFILE][1024];
     char *epath[MAXEXFILE]={0},*staname=*opt->staid?opt->staid:"0000";
     
@@ -1292,9 +1260,8 @@ static int convrnx_s(int sess, int format, rnxopt_t *opt, const char *file,
         /* set observation types by format */
         set_obstype(format,opt);
     }
-#if 1
     dump_halfc(&halfc);
-#endif
+    
     if (!(str=gen_strfile(format,opt->rcvopt,time))) {
         for (i=0;i<MAXEXFILE;i++) free(epath[i]);
         return 0;

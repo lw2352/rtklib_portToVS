@@ -95,15 +95,26 @@
 
 /* ephemeris selections ------------------------------------------------------*/
 static int eph_sel[]={ /* GPS,GLO,GAL,QZS,BDS,SBS */
-    0,0,0,0,0,0
+    0,0,1,0,0,0
 };
 
 /* variance by ura ephemeris -------------------------------------------------*/
 static double var_uraeph(int sys, int ura)
-{   if (sys==SYS_GAL) 
-        return SQR(sisa_value(ura));
-    else
-        return ura<0||14<ura?SQR(6144.0):SQR(ura_value[ura]);
+{
+    const double ura_value[]={   
+        2.4,3.4,4.85,6.85,9.65,13.65,24.0,48.0,96.0,192.0,384.0,768.0,1536.0,
+        3072.0,6144.0
+    };
+    if (sys==SYS_GAL) { /* galileo sisa (ref [7] 5.1.11) */
+        if (ura<= 49) return SQR(ura*0.01);
+        if (ura<= 74) return SQR(0.5+(ura- 50)*0.02);
+        if (ura<= 99) return SQR(1.0+(ura- 75)*0.04);
+        if (ura<=125) return SQR(2.0+(ura-100)*0.16);
+        return SQR(STD_GAL_NAPA);
+    }
+    else { /* gps ura (ref [1] 20.3.3.3.1.1) */
+        return ura<0||15<ura?SQR(6144.0):SQR(ura_value[ura]);
+    }
 }
 /* variance by ura ssr (ref [4]) ---------------------------------------------*/
 static double var_urassr(int ura)

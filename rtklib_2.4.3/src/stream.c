@@ -94,7 +94,7 @@
 #define MAXSTATMSG          32          /* max length of status message */
 #define DEFAULT_MEMBUF_SIZE 4096        /* default memory buffer size (bytes) */
 
-#define NTRIP_AGENT         "RTKLIB/" VER_RTKLIB "_" PATCH_LEVEL
+#define NTRIP_AGENT         "RTKLIB/" VER_RTKLIB
 #define NTRIP_CLI_PORT      2101        /* default ntrip-client connection port */
 #define NTRIP_SVR_PORT      80          /* default ntrip-server connection port */
 #define NTRIP_MAXRSP        32768       /* max size of ntrip response */
@@ -340,7 +340,7 @@ static serial_t *openserial(const char *path, int mode, char *msg)
         921600
     };
     serial_t *serial;
-    int i,brate=115200,bsize=8,stopb=1,tcp_port=0;
+    int i,brate=9600,bsize=8,stopb=1,tcp_port=0;
     char *p,parity='N',dev[128],port[128],fctr[64]="",path_tcp[32],msg_tcp[128];
 #ifdef WIN32
     DWORD error,rw=0,siz=sizeof(COMMCONFIG);
@@ -348,17 +348,10 @@ static serial_t *openserial(const char *path, int mode, char *msg)
     COMMTIMEOUTS co={MAXDWORD,0,0,0,0}; /* non-block-read */
     char dcb[64]="";
 #else
-
-#ifdef __APPLE__
-    /* MacOS doesn't support higher baudrates (>230400B) */
     const speed_t bs[]={
-        B300,B600,B1200,B2400,B4800,B9600,B19200,B38400,B57600,B115200,B230400
+        B300,B600,B1200,B2400,B4800,B9600,B19200,B38400,B57600,B115200,B230400,
+        B460800,B921600
     };
-#else /* regular Linux with higher baudrates */
-    const speed_t bs[]={
-        B300,B600,B1200,B2400,B4800,B9600,B19200,B38400,B57600,B115200,B230400,B460800,B921600
-    };
-#endif /* ifdef __APPLE__ */
     struct termios ios={0};
     int rw=0;
 #endif
@@ -1591,7 +1584,6 @@ static int rspntrip_c(ntrip_t *ntrip, char *msg)
         ntrip->state=2;
         sprintf(msg,"%s/%s",ntrip->tcp->svr.saddr,ntrip->mntpnt);
         tracet(3,"rspntrip_c: response ok nb=%d\n",ntrip->nb);
-        ntrip->tcp->tirecon=ticonnect;
         return 1;
     }
     if ((p=strstr((char *)ntrip->buff,NTRIP_RSP_SRCTBL))) { /* source table */
@@ -1606,8 +1598,6 @@ static int rspntrip_c(ntrip_t *ntrip, char *msg)
         ntrip->nb=0;
         ntrip->buff[0]='\0';
         ntrip->state=0;
-        /* increase subsequent disconnect time to avoid too many reconnect requests */
-        if (ntrip->tcp->tirecon>300000) ntrip->tcp->tirecon=ntrip->tcp->tirecon*5/4;
         discontcp(&ntrip->tcp->svr,ntrip->tcp->tirecon);
     }
     else if ((p=strstr((char *)ntrip->buff,NTRIP_RSP_HTTP))) { /* http response */
@@ -3335,7 +3325,7 @@ extern void strsendcmd(stream_t *str, const char *cmd)
                 sleepms(ms);
             }
             else if (!strncmp(msg+1,"BRATE",5)) { /* set bitrate */
-                if (sscanf(msg+6,"%d",&brate)<1) brate=115200;
+                if (sscanf(msg+6,"%d",&brate)<1) brate=9600;
                 set_brate(str,brate);
                 sleepms(500);
             }

@@ -19,11 +19,10 @@
 *           2018/10/10 1.6  support api change of satexclude()
 *-----------------------------------------------------------------------------*/
 #include "rtklib.h"
-#include <omp.h>
+
 /* constants -----------------------------------------------------------------*/
 
 #define SQR(x)      ((x)*(x))
-#define MAX(x,y)    ((x)>=(y)?(x):(y))
 
 #define NX          (4+3)       /* # of estimated parameters */
 
@@ -36,32 +35,13 @@
 #define REL_HUMI    0.7         /* relative humidity for saastamoinen model */
 
 /* pseudorange measurement error variance ------------------------------------*/
-static double varerr(const prcopt_t *opt, double el, double snr_rover, int sys)
+static double varerr(const prcopt_t *opt, double el, int sys)
 {
-    double a, b, snr_max;
-    double fact = opt->err[0];
-    double sinel = sin(el);
-    
-    switch (sys) {
-        case SYS_GPS: fact *= EFACT_GPS; break;
-        case SYS_GLO: fact *= EFACT_GLO; break;
-        case SYS_SBS: fact *= EFACT_SBS; break;
-        default:      fact *= EFACT_GPS; break;
-    }
-        
-    a = fact * opt->err[1];
-    b = fact * opt->err[2];
-    snr_max = opt->err[5];
-    
-    /* note: SQR(3.0) is approximated scale factor for error variance 
-       in the case of iono-free combination */
-    fact = (opt->ionoopt == IONOOPT_IFLC) ? SQR(3.0) : 1.0;
-    switch (opt->weightmode) {
-        case WEIGHTOPT_ELEVATION: return fact * ( SQR(a) + SQR(b / sinel) );
-        case WEIGHTOPT_SNR      : return fact * SQR(a) * pow(10, 0.1 * MAX(snr_max - snr_rover, 0)); 
-                                                   ;
-        default: return 0;
-    }
+    double fact,varr;
+    fact=sys==SYS_GLO?EFACT_GLO:(sys==SYS_SBS?EFACT_SBS:EFACT_GPS);
+    varr=SQR(opt->err[0])*(SQR(opt->err[1])+SQR(opt->err[2])/sin(el));
+    if (opt->ionoopt==IONOOPT_IFLC) varr*=SQR(3.0); /* iono-free */
+    return SQR(fact)*varr;
 }
 /* get tgd parameter (m) -----------------------------------------------------*/
 static double gettgd(int sat, const nav_t *nav)
@@ -218,11 +198,10 @@ extern int tropcorr(gtime_t time, const nav_t *nav, const double *pos,
 static int rescode(int iter, const obsd_t *obs, int n, const double *rs,
                    const double *dts, const double *vare, const int *svh,
                    const nav_t *nav, const double *x, const prcopt_t *opt,
-                   const ssat_t *ssat, double *v, double *H, double *var, 
-                   double *azel, int *vsat, double *resp, int *ns)
+                   double *v, double *H, double *var, double *azel, int *vsat,
+                   double *resp, int *ns)
 {
     double r,dion,dtrp,vmeas,vion,vtrp,rr[3],pos[3],dtr,e[3],P,lam_L1;
-    double snr_rover = (ssat) ? 0.25 * ssat->snr_rover[0] : opt->err[5];
     int i,j,nv=0,sys,mask[4]={0};
     
     trace(3,"resprng : n=%d\n",n);
@@ -267,7 +246,7 @@ static int rescode(int iter, const obsd_t *obs, int n, const double *rs,
                       iter>0?opt->tropopt:TROPOPT_SAAS,&dtrp,&vtrp)) {
             continue;
         }
-        /* pseudorange residual *///伪距残差
+        /* pseudorange residual */
         v[nv]=P-(r+dtr-CLIGHT*dts[i*2]+dion+dtrp);
         
         /* design matrix */
@@ -282,7 +261,7 @@ static int rescode(int iter, const obsd_t *obs, int n, const double *rs,
         vsat[i]=1; resp[i]=v[nv]; (*ns)++;
         
         /* error variance */
-        var[nv++]=varerr(opt,azel[1+i*2],snr_rover,sys)+vare[i]+vmeas+vion+vtrp;
+        var[nv++]=varerr(opt,azel[1+i*2],sys)+vare[i]+vmeas+vion+vtrp;
         
         trace(4,"sat=%2d azel=%5.1f %4.1f res=%7.3f sig=%5.3f\n",obs[i].sat,
               azel[i*2]*R2D,azel[1+i*2]*R2D,resp[i],sqrt(var[nv-1]));
@@ -309,8 +288,8 @@ static int valsol(const double *azel, const int *vsat, int n,
     /* chi-square validation of residuals */
     vv=dot(v,v,nv);
     if (nv>nx&&vv>chisqr[nv-nx-1]) {
-        sprintf(msg,"Warning: large chi-square error nv=%d vv=%.1f cs=%.1f",nv,vv,chisqr[nv-nx-1]);
-        /* return 0; */ /* threshold too strict for all use cases, report error but continue on */
+        sprintf(msg,"chi-square error nv=%d vv=%.1f cs=%.1f",nv,vv,chisqr[nv-nx-1]);
+        return 0;
     }
     /* large gdop check */
     for (i=ns=0;i<n;i++) {
@@ -329,8 +308,8 @@ static int valsol(const double *azel, const int *vsat, int n,
 /* estimate receiver position ------------------------------------------------*/
 static int estpos(const obsd_t *obs, int n, const double *rs, const double *dts,
                   const double *vare, const int *svh, const nav_t *nav,
-                  const prcopt_t *opt, const ssat_t *ssat, sol_t *sol, double *azel,
-                  int *vsat, double *resp, char *msg)
+                  const prcopt_t *opt, sol_t *sol, double *azel, int *vsat,
+                  double *resp, char *msg)
 {
     double x[NX]={0},dx[NX],Q[NX*NX],*v,*H,*var,sig;
     int i,j,k,info,stat,nv,ns;
@@ -341,11 +320,10 @@ static int estpos(const obsd_t *obs, int n, const double *rs, const double *dts,
     
     for (i=0;i<3;i++) x[i]=sol->rr[i];
     
-    for (i=0;i<MAXITR;i++) 
-    {
-       //默认最大迭代次数是10次，或者残差和的模小于10^-4时，提前退出 
+    for (i=0;i<MAXITR;i++) {
+        
         /* pseudorange residuals */
-        nv=rescode(i,obs,n,rs,dts,vare,svh,nav,x,opt,ssat,v,H,var,azel,vsat,resp,
+        nv=rescode(i,obs,n,rs,dts,vare,svh,nav,x,opt,v,H,var,azel,vsat,resp,
                    &ns);
         
         if (nv<NX) {
@@ -359,22 +337,20 @@ static int estpos(const obsd_t *obs, int n, const double *rs, const double *dts,
             for (k=0;k<NX;k++) H[k+j*NX]/=sig;
         }
         /* least square estimation */
-        if ((info=lsq(H,v,NX,nv,dx,Q))) //if ((info = test_lsq(H, v, NX, nv, dx, Q)))
-        {
+        if ((info=lsq(H,v,NX,nv,dx,Q))) {
             sprintf(msg,"lsq error info=%d",info);
             break;
         }
-        for (j=0;j<NX;j++) x[j]+=dx[j];//x是初始坐标，dx是坐标变化量
+        for (j=0;j<NX;j++) x[j]+=dx[j];
         
-        if (norm(dx,NX)<1E-4) 
-        {
+        if (norm(dx,NX)<1E-4) {
             sol->type=0;
             sol->time=timeadd(obs[0].time,-x[3]/CLIGHT);
             sol->dtr[0]=x[3]/CLIGHT; /* receiver clock bias (s) */
             sol->dtr[1]=x[4]/CLIGHT; /* glo-gps time offset (s) */
             sol->dtr[2]=x[5]/CLIGHT; /* gal-gps time offset (s) */
             sol->dtr[3]=x[6]/CLIGHT; /* bds-gps time offset (s) */
-            for (j=0;j<6;j++) sol->rr[j]=j<3?x[j]:0.0;//解算的坐标
+            for (j=0;j<6;j++) sol->rr[j]=j<3?x[j]:0.0;
             for (j=0;j<3;j++) sol->qr[j]=(float)Q[j+j*NX];
             sol->qr[3]=(float)Q[1];    /* cov xy */
             sol->qr[4]=(float)Q[2+NX]; /* cov yz */
@@ -400,8 +376,8 @@ static int estpos(const obsd_t *obs, int n, const double *rs, const double *dts,
 /* raim fde (failure detection and exclution) -------------------------------*/
 static int raim_fde(const obsd_t *obs, int n, const double *rs,
                     const double *dts, const double *vare, const int *svh,
-                    const nav_t *nav, const prcopt_t *opt, const ssat_t *ssat, 
-                    sol_t *sol, double *azel, int *vsat, double *resp, char *msg)
+                    const nav_t *nav, const prcopt_t *opt, sol_t *sol,
+                    double *azel, int *vsat, double *resp, char *msg)
 {
     obsd_t *obs_e;
     sol_t sol_e={{0}};
@@ -427,7 +403,7 @@ static int raim_fde(const obsd_t *obs, int n, const double *rs,
             svh_e[k++]=svh[j];
         }
         /* estimate receiver position without a satellite */
-        if (!estpos(obs_e,n-1,rs_e,dts_e,vare_e,svh_e,nav,opt,ssat,&sol_e,azel_e,
+        if (!estpos(obs_e,n-1,rs_e,dts_e,vare_e,svh_e,nav,opt,&sol_e,azel_e,
                     vsat_e,resp_e,msg_e)) {
             trace(3,"raim_fde: exsat=%2d (%s)\n",obs[i].sat,msg);
             continue;
@@ -456,7 +432,6 @@ static int raim_fde(const obsd_t *obs, int n, const double *rs,
             resp[j]=resp_e[k++];
         }
         stat=1;
-        sol_e.eventime = sol->eventime;
         *sol=sol_e;
         sat=obs[i].sat;
         rms=rms_e;
@@ -472,7 +447,6 @@ static int raim_fde(const obsd_t *obs, int n, const double *rs,
     free(svh_e); free(vsat_e); free(resp_e);
     return stat;
 }
-
 /* doppler residuals ---------------------------------------------------------*/
 static int resdop(obsd_t *obs, int n, const double *rs, const double *dts,
                   const nav_t *nav, const double *rr, const double *x,
@@ -484,10 +458,8 @@ static int resdop(obsd_t *obs, int n, const double *rs, const double *dts,
     trace(3,"resdop  : n=%d\n",n);
     
     ecef2pos(rr,pos); xyz2enu(pos,E);
-    static double lastEpoth[8] = { 0 };
-    //计算一个历元里面所有的卫星
-    for (i = 0; i < n && i < MAXOBS; i++)
-    {
+    
+    for (i=0;i<n&&i<MAXOBS;i++) {
         
         lam=nav->lam[obs[i].sat-1][0];
         
@@ -499,34 +471,20 @@ static int resdop(obsd_t *obs, int n, const double *rs, const double *dts,
         a[0]=sin(azel[i*2])*cosel;
         a[1]=cos(azel[i*2])*cosel;
         a[2]=sin(azel[1+i*2]);
-        
         matmul("TN",3,1,3,1.0,E,a,0.0,e);
         
         /* satellite velocity relative to receiver in ecef */
         for (j=0;j<3;j++) vs[j]=rs[j+3+i*6]-x[j];
         
         /* range rate with earth rotation correction */
-        //double a = dot(vs, e, 3),b= rs[4 + i * 6],c= rs[1 + i * 6], d = rs[3 + i * 6],f= rs[i * 6];
-        //rate~=dot=Vs*I
-        //rate=dot(vs,e,3)+OMGE/CLIGHT*(rs[4+i*6]*rr[0]+rs[1+i*6]*x[0]-rs[3+i*6]*rr[1]-rs[  i*6]*x[1]);
-        rate = dot(vs, e, 3);
-#if 0  
-        //重构多普勒，接收机速度静止不动为0；fd=(vu-vs)*e/lam;
-        float fd = -(vs[0] * e[0] + vs[1] * e[1] + vs[2] * e[2]) / lam;
-        //使用TDCP的方法
-        /*float fd = -1.0*(obs[i].L[0] - lastEpoth[i]);        
-        lastEpoth[i] = obs[i].L[0];*/
-        trace(2, "delta f = %f,Reconstructed fd = %f,orininal fd=%f.\n", fd - obs[i].D[0], fd, obs[i].D[0]);
+        rate=dot(vs,e,3)+OMGE/CLIGHT*(rs[4+i*6]*rr[0]+rs[1+i*6]*x[0]-
+                                      rs[3+i*6]*rr[1]-rs[  i*6]*x[1]);
+        
         /* doppler residual */
-        v[nv] = -lam * fd - (rate + x[3] - CLIGHT * dts[1 + i * 2]);
-#else
-        /* doppler residual */
-        double a= x[3], b= CLIGHT * dts[1 + i * 2],c= -lam * obs[i].D[0],d=rate;
-        double f = c - (d + a - b);
         v[nv]=-lam*obs[i].D[0]-(rate+x[3]-CLIGHT*dts[1+i*2]);
-#endif
+        
         /* design matrix */
-        for (j=0;j<4;j++) H[j+nv*4]=j<3?-e[j]:1.0;//e的前面有个负号
+        for (j=0;j<4;j++) H[j+nv*4]=j<3?-e[j]:1.0;
         
         nv++;
         //add by lw
@@ -549,7 +507,6 @@ static int resdop(obsd_t *obs, int n, const double *rs, const double *dts,
         }
         obs[i].lam = lam;
     }
-    //add by lw
     return nv;
 }
 /* estimate receiver velocity ------------------------------------------------*/
@@ -571,21 +528,15 @@ static void estvel(const obsd_t *obs, int n, const double *rs, const double *dts
             break;
         }
         /* least square estimation */
-        double t1, t2;
-        //t1 = omp_get_wtime();
         if (lsq(H,v,4,nv,dx,Q)) break;
-        //if (test_lsq(H, v, 4, nv, dx, Q)) break;
-        //t2 = omp_get_wtime();
-        //printf("mat normalize time : %lf\n", t2 - t1);
-                
+        
         for (j=0;j<4;j++) x[j]+=dx[j];
         
-        if (norm(dx,4)<1E-6) 
-        {
+        if (norm(dx,4)<1E-6) {
             for (i = 0; i < 3; i++)
             {
-                trace(1, "estVel=%f\n", x[i]);
                 sol->rr[i + 3] = x[i];
+                trace(1, "vel=%f\n", x[i]);
             }
             break;
         }
@@ -623,18 +574,8 @@ extern int pntpos(const obsd_t *obs, int n, const nav_t *nav,
     trace(3,"pntpos  : tobs=%s n=%d\n",time_str(obs[0].time,3),n);
     
     sol->time=obs[0].time; msg[0]='\0';
-    sol->eventime = obs[0].eventime;
     
     rs=mat(6,n); dts=mat(2,n); var=mat(1,n); azel_=zeros(2,n); resp=mat(1,n);
-    
-    if (ssat) {
-        for (i=0;i<MAXSAT;i++) {
-            ssat[i].snr_rover[0]=0;
-            ssat[i].snr_base[0] =0;
-        }
-        for (i=0;i<n;i++)
-            ssat[obs[i].sat-1].snr_rover[0]=obs[i].SNR[0];
-    }
     
     if (opt_.mode!=PMODE_SINGLE) { /* for precise positioning */
 #if 0
@@ -647,11 +588,11 @@ extern int pntpos(const obsd_t *obs, int n, const nav_t *nav,
     satposs(sol->time,obs,n,nav,opt_.sateph,rs,dts,var,svh);
     
     /* estimate receiver position with pseudorange */
-    stat=estpos(obs,n,rs,dts,var,svh,nav,&opt_,ssat,sol,azel_,vsat,resp,msg);
+    stat=estpos(obs,n,rs,dts,var,svh,nav,&opt_,sol,azel_,vsat,resp,msg);
     
     /* raim fde */
     if (!stat&&n>=6&&opt->posopt[4]) {
-        stat=raim_fde(obs,n,rs,dts,var,svh,nav,&opt_,ssat,sol,azel_,vsat,resp,msg);
+        stat=raim_fde(obs,n,rs,dts,var,svh,nav,&opt_,sol,azel_,vsat,resp,msg);
     }
     /* estimate receiver velocity with doppler */
     if (stat) estvel(obs,n,rs,dts,nav,&opt_,sol,azel_,vsat);
@@ -664,10 +605,12 @@ extern int pntpos(const obsd_t *obs, int n, const nav_t *nav,
             ssat[i].vs=0;
             ssat[i].azel[0]=ssat[i].azel[1]=0.0;
             ssat[i].resp[0]=ssat[i].resc[0]=0.0;
+            ssat[i].snr[0]=0;
         }
         for (i=0;i<n;i++) {
             ssat[obs[i].sat-1].azel[0]=azel_[  i*2];
             ssat[obs[i].sat-1].azel[1]=azel_[1+i*2];
+            ssat[obs[i].sat-1].snr[0]=obs[i].SNR[0];
             if (!vsat[i]) continue;
             ssat[obs[i].sat-1].vs=1;
             ssat[obs[i].sat-1].resp[0]=resp[i];
@@ -676,4 +619,3 @@ extern int pntpos(const obsd_t *obs, int n, const nav_t *nav,
     free(rs); free(dts); free(var); free(azel_); free(resp);
     return stat;
 }
-

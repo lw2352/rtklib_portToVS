@@ -318,39 +318,19 @@ static int model_phw(gtime_t time, int sat, const char *type, int opt,
     return 1;
 }
 /* measurement error variance ------------------------------------------------*/
-static double varerr(int sat, int sys, double el, double snr_rover, int freq, 
-                     int type, const prcopt_t *opt)
+static double varerr(int sat, int sys, double el, int freq, int type,
+                     const prcopt_t *opt)
 {
-    double a, b, snr_max;
-    double fact = 1.0;
-    double sinel = sin(el);
+    double fact=1.0,sinel=sin(el);
     
-    if (type == 1) fact *= opt->eratio[(freq == 0) ? 0 : 1];
+    if (type==1) fact*=opt->eratio[freq==0?0:1];
+    fact*=sys==SYS_GLO?EFACT_GLO:(sys==SYS_SBS?EFACT_SBS:EFACT_GPS);
     
-    switch (sys) {
-        case SYS_GPS: fact *= EFACT_GPS; break;
-        case SYS_GLO: fact *= EFACT_GLO; break;
-        case SYS_SBS: fact *= EFACT_SBS; break;
-        default:      fact *= EFACT_GPS; break;
+    if (sys==SYS_GPS||sys==SYS_QZS) {
+        if (freq==2) fact*=EFACT_GPS_L5; /* GPS/QZS L5 error factor */
     }
-    
-    if ( (sys == SYS_GPS) || (sys == SYS_QZS) ) {
-        if (freq==2) fact *= EFACT_GPS_L5; /* GPS/QZS L5 error factor */
-    }
-        
-    a = fact * opt->err[1];
-    b = fact * opt->err[2];
-    snr_max = opt->err[5];
-    
-    /* note: SQR(3.0) is approximated scale factor for error variance 
-       in the case of iono-free combination */
-    fact = (opt->ionoopt == IONOOPT_IFLC) ? SQR(3.0) : 1.0;
-    switch (opt->weightmode) {
-        case WEIGHTOPT_ELEVATION: return fact * ( SQR(a) + SQR(b / sinel) );
-        case WEIGHTOPT_SNR      : return fact * SQR(a) * pow(10, 0.1 * MAX(snr_max - snr_rover, 0)); 
-                                                   ;
-        default: return 0;
-    }
+    if (opt->ionoopt==IONOOPT_IFLC) fact*=3.0;
+    return SQR(fact*opt->err[1])+SQR(fact*opt->err[2]/sinel);
 }
 /* initialize state and covariance -------------------------------------------*/
 static void initx(rtk_t *rtk, double xi, double var, int i)
@@ -389,9 +369,7 @@ static void corr_meas(const obsd_t *obs, const nav_t *nav, const double *azel,
 {
     const double *lam=nav->lam[obs->sat-1];
     double C1,C2;
-    int i,sys,ix=0;
-    
-    sys=satsys(obs->sat,NULL);
+    int i,sys;
     
     for (i=0;i<NFREQ;i++) {
         L[i]=P[i]=0.0;
@@ -401,31 +379,22 @@ static void corr_meas(const obsd_t *obs, const nav_t *nav, const double *azel,
         /* antenna phase center and phase windup correction */
         L[i]=obs->L[i]*lam[i]-dants[i]-dantr[i]-phw*lam[i];
         P[i]=obs->P[i]       -dants[i]-dantr[i];
-
-        if (opt->sateph==EPHOPT_SSRAPC||opt->sateph==EPHOPT_SSRCOM) {
-            /* use SSR code correction */
-            if (sys==SYS_GPS)
-                ix=(i==0?CODE_L1W-1:CODE_L2W-1);
-            else if (sys==SYS_GLO)
-                ix=(i==0?CODE_L1P-1:CODE_L2P-1);
-            P[i]+=(nav->ssr[obs->sat-1].cbias[obs->code[i]-1]-nav->ssr[obs->sat-1].cbias[ix]); /* ssr correction */
+        
+        /* P1-C1,P2-C2 dcb correction (C1->P1,C2->P2) */
+        if (obs->code[i]==CODE_L1C) {
+            P[i]+=nav->cbias[obs->sat-1][1];
         }
-        else {
-            /* P1-C1,P2-C2 dcb correction (C1->P1,C2->P2) */
-            if (obs->code[i]==CODE_L1C) {
-                P[i]+=nav->cbias[obs->sat-1][1];
-            }
-            else if (obs->code[i]==CODE_L2C||obs->code[i]==CODE_L2X||
-                     obs->code[i]==CODE_L2L||obs->code[i]==CODE_L2S) {
-                P[i]+=nav->cbias[obs->sat-1][2];
-    #if 0
-                L[i]-=0.25*lam[i]; /* 1/4 cycle-shift */
-    #endif
-            }
+        else if (obs->code[i]==CODE_L2C||obs->code[i]==CODE_L2X||
+                 obs->code[i]==CODE_L2L||obs->code[i]==CODE_L2S) {
+            P[i]+=nav->cbias[obs->sat-1][2];
+#if 0
+            L[i]-=0.25*lam[i]; /* 1/4 cycle-shift */
+#endif
         }
     }
     /* iono-free LC */
     *Lc=*Pc=0.0;
+    sys=satsys(obs->sat,NULL);
     i=(sys&(SYS_GAL|SYS_SBS))?2:1; /* L1/L2 or L1/L5 */
     if (lam[0]==0.0||lam[i]==0.0) return;
     
@@ -445,14 +414,16 @@ static void corr_meas(const obsd_t *obs, const nav_t *nav, const double *azel,
 /* detect cycle slip by LLI --------------------------------------------------*/
 static void detslp_ll(rtk_t *rtk, const obsd_t *obs, int n)
 {
-    int i,j,nf;
+    int i,j;
     
     trace(3,"detslp_ll: n=%d\n",n);
+    
     for (i=0;i<n&&i<MAXOBS;i++) for (j=0;j<rtk->opt.nf;j++) {
         if (obs[i].L[j]==0.0||!(obs[i].LLI[j]&3)) continue;
+        
         trace(3,"detslp_ll: slip detected sat=%2d f=%d\n",obs[i].sat,j+1);
-        nf=rtk->opt.nf;/* fixes gcc compiler warning */
-        rtk->ssat[obs[i].sat-1].slip[j<nf?j:nf]=1;
+        
+        rtk->ssat[obs[i].sat-1].slip[j]=1;
     }
 }
 /* detect cycle slip by geometry free phase jump -----------------------------*/
@@ -461,7 +432,7 @@ static void detslp_gf(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
     double g0,g1;
     int i,j;
     
-    trace(4,"detslp_gf: n=%d\n",n);
+    trace(3,"detslp_gf: n=%d\n",n);
     
     for (i=0;i<n&&i<MAXOBS;i++) {
         
@@ -486,7 +457,7 @@ static void detslp_mw(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
     double w0,w1;
     int i,j;
     
-    trace(4,"detslp_mw: n=%d\n",n);
+    trace(3,"detslp_mw: n=%d\n",n);
     
     for (i=0;i<n&&i<MAXOBS;i++) {
         if ((w1=mwmeas(obs+i,nav))==0.0) continue;
@@ -735,10 +706,9 @@ static void udbias_ppp(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
                 slip[i]=rtk->ssat[sat-1].slip[f];
                 l=satsys(sat,NULL)==SYS_GAL?2:1;
                 lam=nav->lam[sat-1];
-                if (obs[i].P[0]==0.0||obs[i].P[l]==0.0||lam[0]==0.0||lam[l]==0.0||lam[f]==0.0)
-                    ion=0;
-                else
-                    ion=(obs[i].P[0]-obs[i].P[l])/(1.0-SQR(lam[l]/lam[0]));
+                if (obs[i].P[0]==0.0||obs[i].P[l]==0.0||
+                    lam[0]==0.0||lam[l]==0.0||lam[f]==0.0) continue;
+                ion=(obs[i].P[0]-obs[i].P[l])/(1.0-SQR(lam[l]/lam[0]));
                 bias[i]=L[f]-P[f]+2.0*ion*SQR(lam[f]/lam[0]);
             }
             if (rtk->x[j]==0.0||slip[i]||bias[i]==0.0) continue;
@@ -769,7 +739,7 @@ static void udbias_ppp(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
             /* reset fix flags */
             for (k=0;k<MAXSAT;k++) rtk->ambc[sat-1].flags[k]=0;
             
-            trace(3,"udbias_ppp: sat=%2d bias=%.3f\n",sat,bias[i]);
+            trace(5,"udbias_ppp: sat=%2d bias=%.3f\n",sat,bias[i]);
         }
     }
 }
@@ -1056,11 +1026,11 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
             else        rtk->ssat[sat-1].resp[j/2]=v[nv];
             
             /* variance */
-            var[nv]=varerr(obs[i].sat,sys,azel[1+i*2],0.25*rtk->ssat[sat-1].snr_rover[j/2],j/2,j%2,opt)+
+            var[nv]=varerr(obs[i].sat,sys,azel[1+i*2],j/2,j%2,opt)+
                     vart+SQR(C)*vari+var_rs[i];
             if (sys==SYS_GLO&&j%2==1) var[nv]+=VAR_GLO_IFB;
             
-            trace(3,"%s sat=%2d %s%d res=%9.4f sig=%9.4f el=%4.1f\n",str,sat,
+            trace(4,"%s sat=%2d %s%d res=%9.4f sig=%9.4f el=%4.1f\n",str,sat,
                   j%2?"P":"L",j/2+1,v[nv],sqrt(var[nv]),azel[1+i*2]*R2D);
             
             /* reject satellite by pre-fit residuals */
@@ -1144,8 +1114,7 @@ static void update_stat(rtk_t *rtk, const obsd_t *obs, int n, int stat)
     rtk->sol.dtr[1]=rtk->x[IC(1,opt)]-rtk->x[IC(0,opt)];
     
     for (i=0;i<n&&i<MAXOBS;i++) for (j=0;j<opt->nf;j++) {
-        rtk->ssat[obs[i].sat-1].snr_rover[j]=obs[i].SNR[j];
-        rtk->ssat[obs[i].sat-1].snr_base[j] =0;
+        rtk->ssat[obs[i].sat-1].snr[j]=obs[i].SNR[j];
     }
     for (i=0;i<MAXSAT;i++) for (j=0;j<opt->nf;j++) {
         if (rtk->ssat[i].slip[j]&3) rtk->ssat[i].slipc[j]++;
@@ -1189,12 +1158,8 @@ extern void pppos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
     
     rs=mat(6,n); dts=mat(2,n); var=mat(1,n); azel=zeros(2,n);
     
-    for (i=0;i<MAXOBS;i++) for (j=0;j<opt->nf;j++) {
-        rtk->ssat[i].fix[j]=0;
-        rtk->ssat[obs[i].sat-1].snr_rover[j]=obs[i].SNR[j];
-        rtk->ssat[obs[i].sat-1].snr_base[j] =0;
-    }
-        
+    for (i=0;i<MAXSAT;i++) for (j=0;j<opt->nf;j++) rtk->ssat[i].fix[j]=0;
+    
     /* temporal update of ekf states */
     udstate_ppp(rtk,obs,n,nav);
     
