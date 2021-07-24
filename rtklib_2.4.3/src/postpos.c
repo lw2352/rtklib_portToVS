@@ -372,7 +372,9 @@ static void procpos(FILE *fp, const prcopt_t *popt, const solopt_t *sopt,
     rtcm_path[0]='\0';
     
     while ((nobs=inputobs(obs,rtk.sol.stat,popt))>=0) {
-        
+        //todo:根据伪距偏差来排除一些卫星
+
+        //排除已知的故障卫星
         /* exclude satellites */
         for (i=n=0;i<nobs;i++) {
             if ((satsys(obs[i].sat,NULL)&popt->navsys)&&
@@ -380,6 +382,7 @@ static void procpos(FILE *fp, const prcopt_t *popt, const solopt_t *sopt,
         }
         if (n<=0) continue;
         
+        //载波相位偏差改正，没有用到
         /* carrier-phase bias correction */
         if (navs.nf>0) {
             corr_phase_bias_fcb(obs,n,&navs);
@@ -387,12 +390,8 @@ static void procpos(FILE *fp, const prcopt_t *popt, const solopt_t *sopt,
         else if (!strstr(popt->pppopt,"-DIS_FCB")) {
             corr_phase_bias_ssr(obs,n,&navs);
         }
-        /* disable L2 */
-#if 0
-        if (popt->freqopt==1) {
-            for (i=0;i<n;i++) obs[i].L[1]=obs[i].P[1]=0.0;
-        }
-#endif
+
+        //定位解算
         if (!rtkpos(&rtk,obs,n,&navs)) continue;
         
         if (mode==0) { /* forward/backward */

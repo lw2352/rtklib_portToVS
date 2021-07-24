@@ -653,9 +653,6 @@ static void *rtksvrthread(void *arg)
             /* if cpu overload, inclement obs outage counter and break */
             if ((int)(tickget()-tick)>=svr->cycle) {
                 svr->prcout+=fobs[0]-i-1;
-#if 0 /* omitted v.2.4.1 */
-                break;
-#endif
             }
         }
         /* send null solution if no solution (1hz) */

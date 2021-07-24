@@ -1125,15 +1125,15 @@ static int filter_(const double *x, const double *P, const double *H,
     double *F=mat(n,m),*Q=mat(m,m),*K=mat(n,m),*I=eye(n);
     int info;
     
-    matcpy(Q,R,m,m);
+    matcpy(Q,R,m,m);//Q=R
     matcpy(xp,x,n,1);
-    matmul("NN",n,m,n,1.0,P,H,0.0,F);       /* Q=H'*P*H+R */
-    matmul("TN",m,m,n,1.0,H,F,1.0,Q);
+    matmul("NN",n,m,n,1.0,P,H,0.0,F);       /* F=P*H */
+    matmul("TN",m,m,n,1.0,H,F,1.0,Q);       /* Q=H'*P*H+R */
     if (!(info=matinv(Q,m))) {
         matmul("NN",n,m,m,1.0,F,Q,0.0,K);   /* K=P*H*Q^-1 */
         matmul("NN",n,1,m,1.0,K,v,1.0,xp);  /* xp=x+K*v */
-        matmul("NT",n,n,m,-1.0,K,H,1.0,I);  /* Pp=(I-K*H')*P */
-        matmul("NN",n,n,n,1.0,I,P,0.0,Pp);
+        matmul("NT",n,n,m,-1.0,K,H,1.0,I);  /* I=I-K*H' */
+        matmul("NN",n,n,n,1.0,I,P,0.0,Pp);  /* Pp=(I-K*H')*P */
     }
     free(F); free(Q); free(K); free(I);
     return info;

@@ -99,8 +99,8 @@ static opt_t rcvopts[] = {
 
 void main()
 {
-    int level = 2;
-#if 0
+    int level = 1;
+#if 1
     //test();
 	rtkrcv(level);
 #elif 0
@@ -119,11 +119,11 @@ void main()
 	solopt_t solopt=solopt_default;
 	filopt_t filopt={""};
 	char* infile[]={
-        {"D:\\data\\6-8\\rover_202106081120.obs"},
-        {"D:\\data\\6-8\\base_202106081120.obs"},
-	    {"D:\\data\\6-8\\rover_202106081120.nav"}
+        {"D:\\data\\6-8\\r.obs"},
+        {"D:\\data\\6-8\\b.obs"},
+	    {"D:\\data\\6-8\\r.nav"}
 	};
-	char* outfile="D:\\data\\6-8\\sol.txt";
+	char* outfile="D:\\data\\6-8\\sol6-29.txt";
 	
 	//prcopt.mode= PMODE_STATIC;
 	//prcopt.navsys = SYS_GPS;
