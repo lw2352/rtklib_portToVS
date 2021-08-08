@@ -379,7 +379,7 @@ OBS::OBS(string p, string l, string d, string s)
 {
 	P = p; L = l; D = d; S = s;
 }
-void test()
+void getObs()
 {
 	ifstream fin("D:\\data\\3-19\\7.obs");
 	string line_info;
@@ -453,7 +453,22 @@ void test()
 		cout << "no such file" << endl;
 	}
 }
-
+VectorXd b = VectorXd::Random(100);
+VectorXd x(100);
+MatrixXd A = MatrixXd::Random(100, 100);
+void test()
+{
+	//int dim = 100;
+	
+	//cout << "A =" << endl << A << endl;
+	//MatrixXd B = MatrixXd::Random(dim, dim);
+	///*
+	//x = A.inverse() * b;
+	x = A.colPivHouseholderQr().solve(b);
+	//cout << "The solution is:\n" << x << endl;
+	//*/
+	//A = A * B;
+}
 
 
 

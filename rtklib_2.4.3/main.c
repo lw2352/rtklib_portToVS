@@ -1,4 +1,5 @@
 #include "src/rtklib.h"
+#include <omp.h>
 
 #define TRACEFILE   "../rtklib_2.4.3/trace_%Y%m%d%h%M.txt"
 #define OPTSDIR     "."                 /* default config directory */
@@ -100,12 +101,39 @@ static opt_t rcvopts[] = {
 void main()
 {
     int level = 1;
-#if 1
+#if 0
     //test();
 	rtkrcv(level);
 #elif 0
-    //my test
-    test();
+    //测试eigen性能
+    //计算Ax=b，求x=(A^-1)*b,重复1000次，提升约27.8%
+    double A[100 * 100], b[100], x[100];
+    for (int i = 0; i < 100 * 100; i++)
+    {
+        A[i] = 2.0 * rand() / RAND_MAX - 1.0;
+        //B[i]= 2.0 * rand() / RAND_MAX - 1.0;
+    }
+    for (int i = 0; i < 100; i++)
+    {
+        b[i] = 2.0 * rand() / RAND_MAX - 1.0;
+    }
+    double EigenTime = 0, MatTime = 0;
+    for (int i = 0; i < 1000; i++)
+    {
+        double t1 = omp_get_wtime();
+        test();
+        double t2 = omp_get_wtime();
+        //printf("time : %lf\n", t2 - t1);
+        EigenTime += t2 - t1;
+        t1 = omp_get_wtime();
+        matinv(A, 100);
+        matmul("NN", 100, 100, 100, 1.0, A, b, 0.0, x);
+        t2 = omp_get_wtime();
+        //printf("time : %lf\n", t2 - t1);
+        MatTime += t2 - t1;
+    }
+    printf("compare : %lf\n", (MatTime - EigenTime)/ MatTime);
+    printf("\n");
     return 0;
 #else
 	traceopen(TRACEFILE);
