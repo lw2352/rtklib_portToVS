@@ -146,12 +146,19 @@ void main()
 	prcopt_t prcopt=prcopt_default;
 	solopt_t solopt=solopt_default;
 	filopt_t filopt={""};
-	char* infile[]={
-        {"D:\\data\\6-8\\r.obs"},
-        {"D:\\data\\6-8\\b.obs"},
-	    {"D:\\data\\6-8\\r.nav"}
+    //单点原始多普勒测速只能用m8t的数据
+	char* infile[] = {
+        {"C:\\Users\\lw\\Documents\\Data\\2021.09.13\\1\\b2.obs"},
+        {"C:\\Users\\lw\\Documents\\Data\\2021.09.13\\1\\b2.obs"},
+	    {"C:\\Users\\lw\\Documents\\Data\\2021.09.13\\1\\b2.nav"}
 	};
-	char* outfile="D:\\data\\6-8\\sol6-29.txt";
+	char* outfile="C:\\Users\\lw\\Documents\\Data\\2021.09.13\\1\\ret.txt";
+    /*char* infile[] = {
+        {"C:\\Users\\lw\\Documents\\Data\\2021.09.13\\5\\r2.obs"},
+        {"C:\\Users\\lw\\Documents\\Data\\2021.09.13\\5\\b1.obs"},
+        {"C:\\Users\\lw\\Documents\\Data\\2021.09.13\\5\\r2.nav"}
+    };
+    char* outfile = "C:\\Users\\204\\Documents\\Data\\2021.09.13\\5\\sol.txt";*/
 	
 	//prcopt.mode= PMODE_STATIC;
 	//prcopt.navsys = SYS_GPS;

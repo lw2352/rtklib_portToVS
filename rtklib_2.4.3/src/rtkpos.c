@@ -375,7 +375,7 @@ static void errmsg(rtk_t *rtk, const char *format, ...)
     n=n<MAXERRMSG-rtk->neb?n:MAXERRMSG-rtk->neb;
     memcpy(rtk->errbuf+rtk->neb,buff,n);
     rtk->neb+=n;
-    trace(2,"%s",buff);
+    trace(1,"%s",buff);
 }
 //单差观测量
 /* single-differenced observable ---------------------------------------------*/
@@ -742,29 +742,42 @@ static void detslp_dop(rtk_t *rtk, const obsd_t *obs, int i, int rcv,
                        const nav_t *nav)
 {
     /* detection with doppler disabled because of clock-jump issue (v.2.3.0) */
-#if 0
-    int f,sat=obs[i].sat;
+#if 1
+    int f,sat=obs[i].sat,cj;
     double tt,dph,dpt,lam,thres;
     
     trace(3,"detslp_dop: i=%d rcv=%d\n",i,rcv);
-    
-    for (f=0;f<rtk->opt.nf;f++) {
-        if (obs[i].L[f]==0.0||obs[i].D[f]==0.0||rtk->ph[rcv-1][sat-1][f]==0.0) {
+    //ph: previous carrier-phase observable (cycle)
+    //pt: previous carrier-phase time
+    //ssat:satellite status
+    for (f=0;f<rtk->opt.nf && rcv==1;f++) {
+        if (obs[i].L[f]==0.0||obs[i].D[f]==0.0||rtk->ssat[sat-1].ph[rcv-1][f]==0.0) {
             continue;
         }
-        if (fabs(tt=timediff(obs[i].time,rtk->pt[rcv-1][sat-1][f]))<DTTOL) continue;
+        if (fabs(tt=timediff(obs[i].time,rtk->ssat[sat - 1].pt[rcv-1][f]))<DTTOL) continue;//DTTOL=0.025s
         if ((lam=nav->lam[sat-1][f])<=0.0) continue;
-        
-        /* cycle slip threshold (cycle) */
-        thres=MAXACC*tt*tt/2.0/lam+rtk->opt.err[4]*fabs(tt)*4.0;
-        
+                
         /* phase difference and doppler x time (cycle) */
-        dph=obs[i].L[f]-rtk->ph[rcv-1][sat-1][f];
-        dpt=-obs[i].D[f]*tt;
-        
-        if (fabs(dph-dpt)<=thres) continue;
-        
-        rtk->slip[sat-1][f]|=1;
+        double dL=obs[i].L[f]- rtk->ssat[sat - 1].ph[rcv - 1][f];//历元间相位差
+        double dt= (rtk->sol.rr[3] * CLIGHT) / lam;
+        //dL -= dt;
+        //dpt=-obs[i].D[f]*tt;
+        double dD = (obs[i].D[f] + rtk->ssat[sat - 1].pd[rcv - 1][f]) * tt / 2;//多普勒积分
+        double dLD = dL - dD;
+        double CS = dLD;
+        char tstr[32];
+        time2str(rtk->sol.time, tstr, 2);
+        trace(2, "slip detected time= %s sat= %2d rcv= %d CS= %.1f\n", tstr,sat, rcv, CS);
+        return;
+
+        //floor函数向下取整
+        cj = floor(fabs(dL * lam / CLIGHT) * 1000 + 0.5);//clock jump,1ms
+        if (cj != 0) continue;
+
+        /* cycle slip threshold (cycle)，默认1.5周 */
+        thres = (!rtk->opt.dynamics) ? 1.5 : MAXACC * tt / 2.0 / lam + rtk->opt.err[4] * fabs(tt) * 4.0;//hz
+        //if (fabs(dph/tt-dpt)<=thres) continue;       
+        //rtk->ssat[sat-1].slip[f]|=1;
         
         errmsg(rtk,"slip detected (sat=%2d rcv=%d L%d=%.3f %.3f thres=%.3f)\n",
                sat,rcv,f+1,dph,dpt,thres);
@@ -1696,7 +1709,7 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
     tracemat(2, Ir_in, 3, ns, 4, 3);
     tracemat(2, Ib_in, 3, ns, 4, 3);
 #endif
-#if 0
+#if 1
     testVel(Ir_in, Ib_in, Vs_in, Fr_in, Fb_in, &vel, ns, obs->lam);
     for (i = 0; i < 3; i++)
     {
@@ -1863,6 +1876,8 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
         if (obs[i].L[j]==0.0) continue;
         rtk->ssat[obs[i].sat-1].pt[obs[i].rcv-1][j]=obs[i].time;
         rtk->ssat[obs[i].sat-1].ph[obs[i].rcv-1][j]=obs[i].L[j];
+        //add by lw20210908
+        rtk->ssat[obs[i].sat - 1].pd[obs[i].rcv - 1][j] = obs[i].D[j];
     }
     for (i=0;i<ns;i++) for (j=0;j<nf;j++) {
         
@@ -1884,7 +1899,7 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
         for (int i = 0; i < 3; i++)
         {
             rtk->sol.rr[3+i] = rtk->sol.rr[i] - rtk->opt.ru[i];
-            trace(1, "ret=%f:rr=%f-ru=%f\n", rtk->sol.rr[3 + i], rtk->sol.rr[i], rtk->opt.ru[i]);
+            trace(3, "ret=%f:rr=%f-ru=%f\n", rtk->sol.rr[3 + i], rtk->sol.rr[i], rtk->opt.ru[i]);
         }
     }
     

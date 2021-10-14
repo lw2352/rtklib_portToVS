@@ -210,10 +210,14 @@ void testVel(double* Ir_in, double* Ib_in, double* Vs_in, double* Fr_in, double*
 	VectorXd I= VectorXd::Ones(n, 1);
 	A.col(A.cols()-1) = I;
 	//cout << A << "\n\n";
+#if 0
 	Q = (A.transpose() * A).inverse();
 	//cout << Q << "\n\n";
 	x = Q * A.transpose() * y;
-	//cout <<"x="<< x.transpose() << "\n";
+#else
+	x = A.colPivHouseholderQr().solve(y);
+#endif
+	cout <<"x="<< x.transpose() << "\n";
 	Map<MatrixXd>(x_in, 4, 1) = x;
 
 }
