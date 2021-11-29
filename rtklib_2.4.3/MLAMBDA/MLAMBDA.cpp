@@ -217,7 +217,7 @@ void testVel(double* Ir_in, double* Ib_in, double* Vs_in, double* Fr_in, double*
 #else
 	x = A.colPivHouseholderQr().solve(y);
 #endif
-	cout <<"x="<< x.transpose() << "\n";
+	//cout <<"x="<< x.transpose() << "\n";
 	Map<MatrixXd>(x_in, 4, 1) = x;
 
 }

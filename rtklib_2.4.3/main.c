@@ -100,7 +100,7 @@ static opt_t rcvopts[] = {
 
 void main()
 {
-    int level = 1;
+    int level = 0;
 #if 0
     //test();
 	rtkrcv(level);
@@ -148,11 +148,11 @@ void main()
 	filopt_t filopt={""};
     //单点原始多普勒测速只能用m8t的数据
 	char* infile[] = {
-        {"C:\\Users\\lw\\Documents\\Data\\2021.09.13\\1\\b2.obs"},
-        {"C:\\Users\\lw\\Documents\\Data\\2021.09.13\\1\\b2.obs"},
-	    {"C:\\Users\\lw\\Documents\\Data\\2021.09.13\\1\\b2.nav"}
+        {"C:\\Users\\LW\\Documents\\Data\\2021.09.13\\1\\r2.obs"},
+        {"C:\\Users\\LW\\Documents\\Data\\2021.09.13\\1\\b2.obs"},
+	    {"C:\\Users\\LW\\Documents\\Data\\2021.09.13\\1\\r2.nav"}
 	};
-	char* outfile="C:\\Users\\lw\\Documents\\Data\\2021.09.13\\1\\ret.txt";
+	char* outfile="C:\\Users\\LW\\Documents\\Data\\2021.09.13\\1\\ret.txt";
     /*char* infile[] = {
         {"C:\\Users\\lw\\Documents\\Data\\2021.09.13\\5\\r2.obs"},
         {"C:\\Users\\lw\\Documents\\Data\\2021.09.13\\5\\b1.obs"},

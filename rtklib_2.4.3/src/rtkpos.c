@@ -1713,10 +1713,9 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
     testVel(Ir_in, Ib_in, Vs_in, Fr_in, Fb_in, &vel, ns, obs->lam);
     for (i = 0; i < 3; i++)
     {
-        trace(1, "testVel=%f\n", vel[i]);
         rtk->sol.rr[i + 3] = vel[i];
     }
-    
+    trace(0, "testVel= %f %f %f\n", vel[0], vel[1], vel[2]);
 #endif
     //卡尔曼的预测，有卫星位置和卫星的初始相位
     //X(k)=AX(k-1)+BU(k-1)

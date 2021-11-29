@@ -536,8 +536,9 @@ static void estvel(const obsd_t *obs, int n, const double *rs, const double *dts
             for (i = 0; i < 3; i++)
             {
                 sol->rr[i + 3] = x[i];
-                trace(1, "vel=%f\n", x[i]);
             }
+            if(obs->rcv==1)
+                //trace(0, "vel= %f %f %f\n", x[0], x[1], x[2]);
             //´æ´¢½ÓÊÕ»úÖÓ²î
             sol->rr[3] = dx[3];
             break;
